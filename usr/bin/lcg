@@ -1,0 +1,25 @@
+#!/bin/sh
+for file in default site
+do
+  if [ -e /etc/cernvm/$file.conf ]
+  then
+      eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+  fi
+done
+
+for dir in /cvmfs/grid.cern.ch/$GLITE_VERSION /cvmfs/grid.cern.ch/default /opt none
+do
+  if [ -f $dir/external/etc/profile.d/grid-env.sh ]
+  then
+     break
+  fi
+done
+if [ -f $dir/external/etc/profile.d/grid-env.sh ]
+then
+  . $dir/external/etc/profile.d/grid-env.sh
+  PATH=$dir/external/usr/bin:$PATH
+else
+  echo "Grid UI not accessible. Please select corresponding option in appliance configuration screen."
+  exit 1
+fi
+exec $*

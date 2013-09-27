@@ -1,4 +1,7 @@
 2013-09-26 Jakob Blomer
+A	usr/bin/lcg
+
+2013-09-26 Jakob Blomer
 M	.ucernvm_bootstrap
 M	usr/share/Modules/modulefiles/ROOT
 
