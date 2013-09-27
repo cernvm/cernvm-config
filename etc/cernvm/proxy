@@ -1,0 +1,31 @@
+#!/bin/sh
+set_crontab()
+{
+cat<<EOF
+SHELL=/bin/bash
+# run-parts
+0,15,30,45 * * * * /etc/cernvm/proxy $1 > /tmp/proxy.log 2>&1
+EOF
+}
+
+. /etc/profile.d/cernvm.sh
+
+if [ "x$1" != "x" ]
+then
+  user=$1
+else
+  user=$USER
+fi
+
+if [ -f  $HOME/.myproxy ]
+then
+  if [ ! -f $HOME/.myproxy.lock ]
+  then
+     touch $HOME/.myproxy.lock
+     crontab -l || set_crontab $user | crontab
+     mkdir -p $HOME/.globus
+     cat $HOME/.myproxy | myproxy-get-delegation -S -l $user -o .globus/$USER.proxy    
+     rm -f $HOME/.myproxy.lock 
+  fi
+fi 
+

@@ -1,0 +1,82 @@
+#!/bin/sh
+#
+# cernvm-context        cernvm contextualization script
+#
+# chkconfig: 345 95 99
+# description: cernvm contextualization script
+
+. /etc/init.d/functions
+
+RETVAL=0
+
+start() {
+  echo -n $"Starting CernVM contextualization: "
+  RETVAL=0
+  for f in ${cernvm_scripts}
+  do
+    ( . $f; [ x`type -t context_start` = x"function" ] && context_start || exit 1 )
+    RETVAL=$[$RETVAL+$?]
+  done
+  if [ $RETVAL -eq 0 ]
+  then
+    echo_success
+  else
+    echo_failure
+  fi
+  echo
+}
+
+stop() {
+  echo -n $"Stopping CernVM contextualization: "
+  RETVAL=0
+  for f in ${cernvm_scripts}
+  do
+    ( . $f; [ x`type -t context_stop` = x"function" ] && context_stop || exit 1 )
+    RETVAL=$[$RETVAL+$?]
+  done
+  if [ $RETVAL -eq 0 ]
+  then
+    echo_success
+  else
+    echo_failure
+  fi
+  echo
+}
+
+read_conf() { 
+  for file in default tools site custom
+  do
+    if [ -e /etc/cernvm/$file.conf ]
+    then
+      eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+    fi
+  done
+}
+
+read_conf
+
+cernvm_init_dir="/etc/cernvm/context.d"
+
+[ -d $cernvm_init_dir ] && cernvm_scripts=`ls $cernvm_init_dir/*.sh`
+
+case "$1" in
+  start)
+        shift 1
+	start $* 
+	;;
+  stop)
+        shift 1
+	stop $* 
+	;;
+  restart|reload)
+        shift 1
+	stop  $*
+	start $*
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $RETVAL

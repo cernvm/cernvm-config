@@ -1,0 +1,17 @@
+#!/bin/sh
+
+ROOT_PATH=$1
+
+if [ "x$UCONTEXT_SRC" = "xEC2" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
+fi
+
+if [ "x$UCONTEXT_SRC" = "xCloudStack" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, CloudStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_cloudstack.cfg
+fi
+
+if [ -f ${ROOT_PATH}/etc/cernvm-release ]; then
+  log_start "Booting"
+  log_info "$(head -n1 ${ROOT_PATH}/etc/cernvm-release)" 
+fi
+

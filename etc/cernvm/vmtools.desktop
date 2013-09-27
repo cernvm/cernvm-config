@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Version=1.0
+Name=vmtools
+Name[C]=vmtools
+Comment[C]=VM tools desktop client
+Exec=/usr/bin/vmware-user-suid-wrapper
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel

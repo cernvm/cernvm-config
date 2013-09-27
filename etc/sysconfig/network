@@ -1,0 +1,3 @@
+# Created by uCernVM
+NETWORKING=yes
+HOSTNAME=localhost

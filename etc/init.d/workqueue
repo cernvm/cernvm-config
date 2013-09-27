@@ -1,0 +1,204 @@
+#!/bin/sh
+
+# Part of CernVM extensions
+# See: http://cernvm.cern.ch
+
+### BEGIN INIT INFO
+# Provides:           workqueue
+# Required-Start:     $local_fs $network $named
+# Should-Start:       $time
+# Required-Stop:
+# Should-Stop:
+# Default-Start:      3 4 5
+# Default-Stop:       0 1 2 6
+# Short-Description:  Starts services required to run workqueue jobs
+# Description:        Starts the cctools catalog server and/or workqueue workers
+### END INIT INFO
+
+. /etc/init.d/functions
+
+# Return values acc. to LSB for all commands but status:
+# 0	  - success
+# 1       - generic or unspecified error
+# 2       - invalid or excess argument(s)
+# 3       - unimplemented feature (e.g. "reload")
+# 4       - user had insufficient privileges
+# 5       - program is not installed
+# 6       - program is not configured
+# 7       - program is not running
+# 8--199  - reserved (8--99 LSB, 100--149 distrib, 150--199 appl)
+
+RETVAL=0
+LOCKFILE=/var/lock/subsys/workqueue
+
+[ -f /etc/sysconfig/workqueue ] && . /etc/sysconfig/workqueue
+WQ_CONFIG=${WQ_CONFIG:=/etc/workqueue.conf}
+
+[ ! -f ${WQ_CONFIG} ] && exit 6
+. ${WQ_CONFIG}
+[ -f ${WQ_CONFIG_LOCAL} ] && . ${WQ_CONFIG_LOCAL}
+
+prog_catalog_server="/usr/bin/catalog_server"
+prog_wq_worker="/usr/bin/work_queue_worker"
+
+
+is_root() {
+  [ $(id -u) -eq 0 ] && return 0
+  return 1
+}
+
+
+setup_user() {
+  local user=$1
+  if ! getent passwd $user >/dev/null; then
+    useradd $user
+  fi
+  mkdir -p /var/log/workqueue
+  mkdir -p /var/run/workqueue
+  chown -R $user /var/log/workqueue
+  chown -R $user /var/run/workqueue
+}
+
+
+start() {
+  ! is_root && return 4
+  setup_user $WQ_USER
+
+  if is_true $START_CATALOG_SERVER && [ ! -f /var/run/workqueue/catalog_server.pid ]; then
+    [ -x $prog_catalog_server ] || return 5
+    echo -n $"Starting catalog server: "
+    CMD="$prog_catalog_server \
+      -d all \
+      -o /var/log/workqueue/catalog_server.log \
+      -O $((1024*1024)) \
+      -b \
+      -B /var/run/workqueue/catalog_server.pid"
+    runuser -c "$CMD" $WQ_USER
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+      echo_success
+      echo
+      touch ${LOCKFILE}
+    else
+      echo_failure
+      echo
+    fi
+  fi
+
+  if [ $RETVAL -eq 0 -a $WQ_WORKERS -gt 0 ]; then
+    [ -x $prog_wq_worker ] || return 5
+    echo -n $"Starting $WQ_WORKERS workqueue workers: "
+    homedir=$(getent passwd $WQ_USER | cut -d: -f6)
+    for i in $(seq 1 $WQ_WORKERS); do
+      [ -f /var/run/workqueue/workqueue${i}.pid ] && continue
+      mkdir -p "${homedir}/slot${i}"
+      chown $WQ_USER "${homedir}/slot${i}"
+      CMD="nohup $prog_wq_worker \
+        -a \
+        -C $CATALOG_SERVER \
+        -d all \
+        -o /var/log/workqueue/workqueue${i}.log \
+        -N $WQ_PROJECT \
+        -s ${homedir}/slot${i} \
+        -b 5 \
+        -t 300000000 >/dev/null 2>&1 & echo \$! > /var/run/workqueue/workqueue${i}.pid"
+      runuser -c "$CMD" $WQ_USER
+      RETVAL=$(($RETVAL + $?))
+    done
+    if [ $RETVAL -eq 0 ]; then
+      echo_success
+      echo
+      touch ${LOCKFILE}
+    else
+      echo_failure
+      echo
+      RETVAL=1
+    fi
+  fi
+
+  return $RETVAL
+}
+
+
+stop() {
+  [ ! is_root ] && return 4
+
+  if [ -f /var/run/workqueue/catalog_server.pid ]; then
+    echo -n $"Shutting down catalog server: "
+    kill $(cat /var/run/workqueue/catalog_server.pid)
+    rm -f /var/run/workqueue/catalog_server.pid
+    echo_success
+    echo
+  fi
+
+  WORKER_PIDS=$(ls /var/run/workqueue/workqueue*.pid 2>/dev/null)
+  if [ "x$WORKER_PIDS" != x ]; then
+    echo -n $"Shutting down work queue workers: "
+    for worker_pid in $WORKER_PIDS; do
+      kill $(cat $worker_pid)
+      rm -f $worker_pid
+    done
+    echo_success
+    echo
+  fi
+
+  [ $RETVAL -eq 0 ] && rm -f ${LOCKFILE}
+
+  return $RETVAL
+}
+
+
+status() {
+  [ -f /var/run/workqueue/catalog_server.pid ] &&
+    echo "catalog server running as pid $(cat /var/run/workqueue/catalog_server.pid)"
+
+  WORKER_PIDS=$(ls /var/run/workqueue/workqueue*.pid 2>/dev/null)
+  if [ "x$WORKER_PIDS" != x ]; then
+    for worker_pid in $WORKER_PIDS; do
+      echo "work queue worker running as pid $(cat $worker_pid)"
+    done
+  fi
+}
+
+
+case "$1" in
+  start)
+    start
+    RETVAL=$?
+  ;;
+  stop)
+    stop
+    RETVAL=$?
+  ;;
+  restart|try-restart|condrestart)
+    ## Stop the service and regardless of whether it was
+    ## running or not, start it again.
+    #
+    ## Note: try-restart is now part of LSB (as of 1.9).
+    ## RH has a similar command named condrestart.
+    stop
+    start
+    RETVAL=$?
+  ;;
+    reload|force-reload)
+    # ToDO
+    RETVAL=3
+  ;;
+  status)
+    # Return value is slightly different for the status command:
+    # 0 - service up and running
+    # 1 - service dead, but /var/run/  pid  file exists
+    # 2 - service dead, but /var/lock/ lock file exists
+    # 3 - service not running (unused)
+    # 4 - service status unknown :-(
+    # 5--199 reserved (5--99 LSB, 100--149 distro, 150--199 appl.)
+    status
+    RETVAL=3
+  ;;
+  *)
+    echo "Usage: $0 {start|stop|status|try-restart|condrestart|restart|force-reload|reload}"
+    RETVAL=3
+  ;;
+esac
+
+exit $RETVAL

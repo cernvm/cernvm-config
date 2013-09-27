@@ -1,0 +1,459 @@
+#!/bin/sh
+
+setDefaultRunlevel() {
+   sed -i -e "s/id:.:initdefault/id:$1:initdefault:/" /etc/inittab
+}
+
+getConfig() {
+  local cfg=$1
+  local url=$2
+  local file
+  local http_proxy  
+
+  curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
+
+  if [ $? -eq 0 ]
+  then
+     if [ -f /etc/conary/config.d/httpProxy ]  
+     then
+        http_proxy=`grep -e "^proxy.*http:" /etc/conary/config.d/httpProxy | cut -f3`
+        proxy_host=`echo $http_proxy | awk -F"://|:" '{print $2}'`
+        mkdir -p /etc/cernvm/proxies
+        mv -f /etc/conary/config.d/httpProxy /etc/cernvm/proxies/$proxy_host
+     fi
+     return 0
+  fi
+
+  if [ "x$CVMFS_HTTP_PROXY" != "x" -a      \
+       "x$CVMFS_HTTP_PROXY" != "xDIRECT" ] 
+  then  
+    cvmfs_proxy=`echo "$CVMFS_HTTP_PROXY" | awk -F":|;" '{printf("%s:%s\n",$2,$3)}'`
+    env http_proxy="http:$cvmfs_proxy" curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
+    if [ $? -eq 0 ]
+    then
+       printf "proxy\thttp\thttp:%s\n" $cvmfs_proxy > /etc/conary/config.d/httpProxy
+       return 0
+    fi
+  fi
+  
+  if [ -d /etc/cernvm/proxies ]
+  then
+     for file in `find /etc/cernvm/proxies -type f -print`
+     do
+        http_proxy=`grep -e "^proxy.*http:" $file| cut -f3`
+        env http_proxy="$http_proxy" curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
+        if [ $? -eq 0 ]
+        then
+           cp -f $file /etc/conary/config.d/httpProxy
+           return 0 
+          fi
+     done 
+  fi
+
+  sed -ie 's%/changepassword%/configure/Proxy","/changepassword%' /etc/raa/custom.cfg
+
+  return 1
+}
+
+
+verifyConfig() {
+  local cfg=$1
+  local result=1
+  local signature=`awk '/^Config-signature: / {print $2 }' $cfg | sed 's/\r//'`
+  local content=`awk '/LC_ALL=C/ { content=1 } {if (content) {print}; }' $cfg`
+
+  CERNVM_CONFIG_KEY=${CERNVM_CONFIG_KEY:=/etc/cernvm/keys/cern.ch.pub}
+
+  if [ -x /usr/bin/openssl -a \
+       -x /usr/bin/base64 -a  \
+       -f $CERNVM_CONFIG_KEY -a \
+       "$signature" != "" ]
+  then
+     local r_hash=`echo "$content" | /usr/bin/openssl sha1`
+     local s_hash=`echo "$signature" | /usr/bin/base64 -d -w 0 | /usr/bin/openssl rsautl -pubin -inkey $CERNVM_CONFIG_KEY -verify`
+     if [ "$r_hash" = "$s_hash" ]
+     then
+        result=0
+     else
+       result=2
+     fi
+  fi
+  echo $content | sed 's/ /\n/g' > $cfg
+  return $result
+}
+
+cernvm_service () {
+  conary q $1 > /dev/null 2>&1 
+  if [ $? -eq  0 ]
+  then
+    case "$1" in
+        enable)
+         service_action="start"
+         service_state="stop"
+        ;;
+        disable)
+         service_action="stop"
+         service_state="off"
+        ;;
+        *) 
+        return
+    esac
+    shift 1
+    for service in $*
+    do   
+      if [ -f /etc/init.d/$service ]
+      then
+        /sbin/chkconfig --level 35 $service $service_state || true
+        /etc/init.d/$service $service_action || true  
+      fi 
+    done 
+  fi 
+}
+
+install_group_profile() {
+  for g in $*
+  do   
+    case $g in
+      group-none*)
+       ;; 
+      *) 
+        conary q $g > /dev/null 2>&1
+        if [ $? -eq  1 ]
+        then
+          label=`conary q group-core --info | grep Label.*: | sed 's/.*: cernvm/cernvm/'`
+          version=`conary q group-core | awk -F= '{print $2}'`
+          conary rq "$g=$label/$version" 
+          if [ $? -eq 0 ]
+          then
+            conary update "$g=$label/$version"
+          fi
+        fi
+      ;;
+    esac
+  done >> /var/log/cernvm-update.log 2>&1
+  cernvm_service group-cernvm-batch disable raa raa-appliance raa-lighttpd raa-restore copilot-agent copilot-context-agent >> /var/log/cernvm-update.log 2>&1 
+  cernvm_service group-boinc enable copilot-agent  >> /var/log/cernvm-update.log 2>&1 
+}
+
+customize_desktop() {
+    #This function will do the following only if CERNVM_EDITION is Desktop
+    #  1. change Resolution by patching /etc/x11/xorg.conf
+    #  2. if CERNVM_START_XDM is:
+    #      on: run xdm in runlevel 3&5
+    #      off:disable xdm in runlevel 3&5
+    #  3. if CERNVM_KEYBOARD is not empty and if /usr/bin/system-config-keyboard exists
+    #      set the keyboard
+
+    for file in $CONFIG_FILES
+      do
+      if [ -e /etc/cernvm/$file.conf ]
+	  then
+          eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+      fi
+    done
+
+    if [ x$CERNVM_EDITION == "xDesktop" ]
+	then
+	if [ x$CERNVM_SCREEN_RES != "x" ]
+	    then
+	    /usr/bin/env python /etc/cernvm/setres.py $CERNVM_SCREEN_RES
+	fi
+	if [ x$CERNVM_START_XDM == "xon" ]
+	then
+	    [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm on
+            setDefaultRunlevel 5
+	fi
+	if [ x$CERNVM_START_XDM == "xoff" ]
+	then
+	    [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm off
+            setDefaultRunlevel 3
+	fi
+	if [ x$CERNVM_KEYBOARD != "x" -a -x /usr/bin/system-config-keyboard ]
+	    then
+	    /usr/bin/system-config-keyboard --noui $CERNVM_KEYBOARD > /dev/null 2>&1
+	fi
+    else 
+	# when not in desktop mode , turn off xdm
+        [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm off
+        setDefaultRunlevel 3
+    fi
+}
+
+
+cernvm_config () {
+
+  for file in $CONFIG_FILES
+  do
+    if [ -r /etc/cernvm/$file.conf ]
+    then
+      eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+    fi
+  done
+
+  case `uname -m` in
+    i*86*)
+      platform=i686-pc-linux-gnu
+      ;;
+    x86_64*)
+      platform=x86_64-unknown-linux-gnu
+      ;;
+     *)
+      echo "(Unknown or unsupported platform)"
+      exit 1
+      ;;
+  esac
+
+  server="http://cernvm.cern.ch/config/"
+
+  if [ x"$CERNVM_CONFIG_URL" != "x" ]
+  then
+    server="$CERNVM_CONFIG_URL"
+  fi
+
+  if [ x"$config_url" != "x" ]
+  then
+    server=$config_url
+  fi
+
+  if [ "x$CERNVM_ORGANISATION" = "x" ]
+  then
+    organisations="none"
+  else
+    organisations=`echo $CERNVM_ORGANISATION | awk '{printf("%s",tolower($1))}' | sed 's/,/ /g'`  
+  fi
+
+  if [ "x$CERNVM_UUID" = "x" ]
+  then
+    uuid=""
+  else
+    uuid="&uuid=${CERNVM_UUID}"
+  fi
+
+  if [ -x /usr/bin/cvmfs2 ]
+  then
+    cvmfs_version="&cvmfs_version=$(/usr/bin/cvmfs2 --version 2>&1 | awk '{print $3}')"
+  else
+    cvmfs_version=""
+  fi
+
+  touch /etc/cernvm/default.conf > /dev/null 2>&1 || exit 1
+
+  rm -rf /etc/conary/config.d/cernvmProxy
+
+  for org in $organisations
+  do
+    local cfg=`mktemp`
+    organisation="&organisation=${org}"
+    url="$server/?platform=${platform}${organisation}${uuid}${cvmfs_version}"
+    getConfig $cfg $url
+    if [ $? -eq 0 ]
+    then
+      verifyConfig $cfg
+      case $? in 
+         1)
+           cat $cfg # Config is not verified
+           echo "CERNVM_CONFIG_STATUS=untrusted"
+           ;;
+         2)
+           echo "CERNVM_CONFIG_STATUS=modified"
+           ;;
+         0)
+           cat $cfg # Config is verified
+           echo "CERNVM_CONFIG_STATUS=verified"
+          ;;
+       esac
+     fi
+     if [ "x$CERNVM_DOMAIN" != "x" ]
+     then
+       if [ `set | grep ^CVMFS | wc -l` -gt 0 ]
+       then
+         set | grep ^CVMFS > /etc/cvmfs/config.d/${org}.${CERNVM_DOMAIN}.local
+       fi
+     fi
+     rm -rf $cfg
+  done | sort -u > /etc/cernvm/default.conf+
+
+  if [ -s /etc/cernvm/default.conf+ ]
+  then
+    # add check for content
+    cp -f /etc/cernvm/default.conf+ /etc/cernvm/default.conf
+  fi
+
+  if [ -s /etc/cernvm/default.conf ]
+  then
+      eval `sed 's/=\$(.*)//g' /etc/cernvm/default.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+  fi
+
+  if [ "x$CERNVM_TZONE" != "x" ]
+  then
+     for dir in /usr/share/zoneinfo /usr/share/zoneinfo/posix
+     do
+       if [ -f $dir/$CERNVM_TZONE ]
+       then
+          ln -sf $dir/$CERNVM_TZONE /etc/localtime
+          break
+       fi
+     done
+  fi
+ 
+  if [ "x$CERNVM_CONFIG_DATE" != "x" ]
+  then
+     date -u $CERNVM_CONFIG_DATE > /dev/null 2>&1
+     hwclock --systohc > /dev/null 2>&1 || true
+  fi
+
+  if [ "x$CERNVM_UUID" != "x" ]
+  then
+     echo "CERNVM_UUID=$CERNVM_UUID" > /etc/cernvm/machine.conf
+  fi
+
+
+}
+
+
+[ -f /etc/cernvm/custom/config.sh ] && . /etc/cernvm/custom/config.sh
+
+config_opt=0
+config_reset=0
+config_proxy=1
+config_file=site
+config_dir=/etc/cernvm
+config_url=""
+CONFIG_FILES="config default tools domain site machine custom"
+
+while getopts ?rhxpuc:d:s: opt 
+     do
+          case $opt in
+          c)     config_opt=1 
+                 config_file="$OPTARG"
+                 config_old=""
+
+                 shift $(($OPTIND - 1))
+
+                 mkdir -p $config_dir || exit 1
+
+                 if [ -f /usr/sbin/gdm ]
+                 then
+                    CERNVM_EDITION="Desktop"
+                 else
+                    CERNVM_EDITION="Basic"
+                 fi
+
+    	         CERNVM_START_XDM="xoff"
+    	         CERNVM_CVMFS2="on"
+
+                 if [ -f  ${config_dir}/${config_file}.conf ]
+                 then
+                    . ${config_dir}/${config_file}.conf
+                    s_vars=`cat  ${config_dir}/${config_file}.conf | cut -d= -f1,1`
+                 fi
+                 for key in  $*
+                 do
+                    eval ${key}
+                 done
+
+                 d_vars="CERNVM_ORGANISATION CERNVM_EDITION CERNVM_CVMFS2"
+
+                 for var in `echo $d_vars $s_vars | tr -s [:space:] "\n" | sort -u` 
+                 do
+                    echo $var=${!var}
+                 done >  ${config_dir}/${config_file}.conf
+
+                 cernvm_config
+
+                 case x$CERNVM_EDITION in
+                    xBasic)
+                      for org in $organisations
+                      do
+                        install_group_profile group-${org}
+                      done
+                      ;;
+                    xDesktop)
+                      for org in $organisations
+                      do
+                        install_group_profile group-${org}-desktop
+                      done
+                      ;;
+                    *)
+                      ;;
+                 esac
+                 exit 0
+                 ;;
+          d)     config_dir="$OPTARG"
+                 ;;
+          x)     customize_desktop
+                 ;;
+          g)     install_group_profile $OPTARG
+                 exit 0
+                 ;;
+          p)     config_proxy=1
+                 ;;
+          r)     CONFIG_FILES="config default"
+                 ;;
+          s)     shift 1
+                 config_url=$1
+                 shift 1
+                 ;;
+          u)
+                 shift $(($OPTIND - 1))                
+         	 user=$1
+	         shell=$2
+	         passwd=$3
+	         group=$4
+	         if [ "x$user" = x ]; then
+		   exit 0
+	         fi
+	         if [ "x$shell" = x ]; then
+		    exit 0
+	         fi
+	         if [ "x$passwd" = x ]; then
+	  	    exit 0
+	         fi
+	         if [ "x$group" = x ]; then
+                    group=`echo $CERNVM_ORGANISATION | sed 's/,/ /g' | awk '{printf("%s",tolower($1))}'`
+	         fi
+                 if [ "x$user" != "x$group" ]
+                 then 
+                   groupadd -f -r ${group} > /dev/null 2>&1
+                 fi
+                 if [ -f /etc/sudoers.cernvm ] 
+                 then 
+                    mv -f /etc/sudoers.cernvm /etc/sudoers
+	            chmod 0440 /etc/sudoers
+                    groupadd wheel > /dev/null 2>&1
+                    touch /etc/firstboot
+                 fi
+ 	         id $user > /dev/null 2>&1
+                 if [ $? -eq 1 ] 
+                 then
+                   useradd $user
+                   if [  /etc/firstboot -nt /etc/sudoers ] 
+                   then
+                       usermod -G wheel $user
+                       touch /etc/sudoers
+                   fi
+                 fi
+                 usermod -s $shell -g $group $user || exit 1 
+                 if [ "x$user" != "x$group" ]
+                 then 
+                   if [ `groups $user | grep -c ' wheel'` -eq 1 ]
+                   then
+                      groups='wheel,users,'
+                   else
+                      groups='users,'
+                   fi
+                   groups=${groups}${group}
+                   usermod -G $groups $user || true
+                 fi
+                 echo $passwd | passwd --stdin $user
+                 exit $?
+	         ;;
+         \?|h)   printf "Usage: %s: [-x][-s <config server url>][-p][-d <dir>][-c <config file>] CERNVM_ORGANISATION=<ALICE,ATLAS...>\n"  $0 
+                 printf "       %s: -u <user> <shell> <password> [group]\n" $0
+                 exit 2
+                 ;;
+          esac
+done
+
+cernvm_config
+

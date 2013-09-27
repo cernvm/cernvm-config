@@ -1,0 +1,630 @@
+#!/bin/sh
+#############################################################################
+# postinstall.sh - a script to configure CernVM image after install
+#
+# SYNOPSIS
+# postinsall.sh <model>
+#
+# DESCRIPTION
+#
+# AUTHOR:
+# Predrag Buncic, e-mail: Predrag.Buncic@cern.ch 
+#
+# CREATION DATE:
+# 14-Jun-2011
+#C<
+###########################################################################
+DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
+                 context gnome x11dirs xfce4 network_manager plymouth ucernvm \
+                 condor ganglia xrootd openldap precron updatedb screen \
+                 cernvm_appliance_agent localcert" 
+###########################################################################
+# reset root password
+###########################################################################
+reset_root_password() {
+  env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+}
+
+
+###########################################################################
+# screen permissions
+###########################################################################
+screen() {
+  chmod 1777 /var/run/screen
+}
+
+
+###########################################################################
+# remove /cvmfs, /mnt from updatedb
+###########################################################################
+updatedb() {
+  if ! diff -q /etc/updatedb.conf /etc/updatedb.conf.cernvm > /dev/null; then
+    mv /etc/updatedb.conf /etc/updatedb.conf.bak
+    cp /etc/updatedb.conf.cernvm /etc/updatedb.conf 
+  fi  
+}
+
+
+###########################################################################
+# DEPRECATED Set default options
+###########################################################################
+default_kernel_options () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+     eval `/sbin/grubby --info=$kernel`
+     /sbin/grubby  --args="ro root=LABEL=root noresume crashkernel=1M@16M" --update-kernel=$kernel
+  fi 
+}
+###########################################################################
+# DEPRECATED? Disable nmi_watchdog
+###########################################################################
+disable_nmi_watchdog () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+     eval `/sbin/grubby --info=$kernel`
+     /sbin/grubby  --args="$args nmi_watchdog=0" --update-kernel=$kernel
+  fi 
+}
+###########################################################################
+# DEPRECATED Configure splashy theme for cernvm
+###########################################################################
+splashy () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+    eval `/sbin/grubby --info=$kernel`
+    if [ -f /usr/share/splashy/themes/cernvm/theme.xml ]
+    then
+      splashy_config -s cernvm
+      if [ $? -eq 0 ]
+      then
+       /sbin/grubby --args="$args console=tty1 vga=0x317 rhgb" --update-kernel=$kernel
+      fi
+    fi
+  fi 
+}
+
+###########################################################################
+# DEPRECATED Set divider=10 option
+###########################################################################
+grub_divider_option () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+    config=`echo $kernel | sed 's/vmlinuz/config/'`
+    if [ -f $config ]
+    then
+      if [ `grep -c ^CONFIG_HZ_1000=y $config` -eq 1 ]
+      then
+        /sbin/grubby  --remove-args="notsc" --update-kernel=$kernel
+        eval `/sbin/grubby --info=$kernel`
+        /sbin/grubby  --args="$args divider=10" --update-kernel=$kernel
+      fi
+    fi
+  fi 
+}
+
+###########################################################################
+# TODO create an entry in inittab to allow console login
+###########################################################################
+xen_xvc0 () {
+  if [ -c /dev/xvc0 ]
+  then
+     if [ `grep -c xvc0 /etc/inittab` -eq 0 ]
+     then
+        echo "co:2345:respawn:/sbin/mingetty xvc0" >> /etc/inittab
+        eval `/sbin/grubby --info=$kernel`
+        /sbin/grubby  --args="$args console=xvc0" --update-kernel=$kernel
+     fi
+     if [ `grep -c xvc0 /etc/securetty` -eq 0 ]
+     then
+        echo "xvc0" >> /etc/securetty
+     fi
+  fi
+}
+
+###########################################################################
+# DONE BY setup (ksh, csh missing) set default /etc/shells
+###########################################################################
+shells () {
+  for shell in /bin/sh /bin/bash /bin/csh /bin/tcsh /bin/ksh /sbin/nologin
+  do
+     if [ -f $shell ]
+     then
+        echo $shell
+     fi
+  done > /etc/shells
+}
+
+###########################################################################
+# Add context option to inittab / login
+###########################################################################
+context () {
+  if [ -f /usr/sbin/cernvm-online-login.sh -a -f /lib64/security/pam_cernvm.so ]
+  then
+    sed -i -e '/pam_cernvm.so/d' /etc/pam.d/login
+    sed -i -e '/auth\s*include\s*system-auth/i auth [success=done auth_err=die ignore=ignore] pam_cernvm.so' /etc/pam.d/login
+    sed -i -e '/account\s*include\s*system-auth/i account requisite pam_cernvm.so' /etc/pam.d/login
+  fi
+  [ ! -f /bin/sh.after ] && ln -s sh /bin/sh.after || true
+  [ ! -f /bin/sh.before ] && ln -s sh /bin/sh.before || true
+}
+
+
+###########################################################################
+# Initial cvmfs config
+###########################################################################
+cvmfs () {
+  /usr/bin/cvmfs_config setup
+}
+
+
+###########################################################################
+# Setup CernVM services
+###########################################################################
+cernvm () {
+  /sbin/chkconfig --add cernvm
+  /sbin/chkconfig --add cernvm-context
+  /sbin/chkconfig --add amiconfig-cernvm
+  /sbin/chkconfig --add vmcontext_hepix
+  /sbin/chkconfig --add vmcontext_prolog
+  /sbin/chkconfig --add vmcontext_epilog
+  /sbin/chkconfig --add cernvm-release
+  /sbin/chkconfig --add cernvm-appliance-agent
+  /sbin/chkconfig cernvm-appliance-agent off
+  mkdir -p /mnt/cdrom
+}
+
+
+###########################################################################
+# Remove localhost certificate / key (recreated on first boot)
+###########################################################################
+localcert () {
+  rm -f /etc/pki/tls/certs/localhost.crt
+  rm -f /etc/pki/tls/private/localhost.key
+}
+
+
+###########################################################################
+# Add user for cernvm appliance agent
+###########################################################################
+cernvm_appliance_agent () {
+  if ! /usr/bin/getent passwd cernvm-appliance-agent > /dev/null; then 
+    /usr/sbin/useradd -r cernvm-appliance-agent
+  fi
+}
+
+
+
+###########################################################################
+# Turn off cloud-init
+###########################################################################
+cloud_init () {
+  /sbin/chkconfig cloud-init-local on
+  /sbin/chkconfig cloud-init on
+  /sbin/chkconfig cloud-config on
+  /sbin/chkconfig cloud-final on
+}
+
+
+###########################################################################
+# Turn off network_manager
+# Disturbs cvmfs started in init ram disk (disconnecting network?)
+###########################################################################
+network_manager () {
+  /sbin/chkconfig NetworkManager off
+}
+
+
+###########################################################################
+# Turn off ganglia service
+###########################################################################
+ganglia () {
+  /sbin/chkconfig gmond off
+  /sbin/chkconfig gmetad off
+}
+
+
+###########################################################################
+# Turn off openldap service
+###########################################################################
+openldap () {
+  /sbin/chkconfig slapd off
+}
+
+
+###########################################################################
+# Turn off condor service
+###########################################################################
+condor () {
+  /sbin/chkconfig condor off
+}
+
+
+###########################################################################
+# Turn off xrootd services
+###########################################################################
+xrootd () {
+  /sbin/chkconfig xrootd off
+  /sbin/chkconfig frm_xfrd off
+  /sbin/chkconfig frm_purged off
+  /sbin/chkconfig cmsd off
+  /sbin/chkconfig eosd off
+}
+
+
+###########################################################################
+# Fixes for network and halt scripts
+###########################################################################
+ucernvm () {
+  if ! diff -q /etc/init.d/halt /etc/init.d/halt.ucernvm > /dev/null; then
+    mv /etc/init.d/halt /etc/init.d/halt.bak
+    cp /etc/init.d/halt.ucernvm /etc/init.d/halt
+  fi
+  if ! diff -q /etc/init.d/network /etc/init.d/network.ucernvm > /dev/null; then
+    mv /etc/init.d/network /etc/init.d/network.bak
+    cp /etc/init.d/network.ucernvm /etc/init.d/network
+  fi
+}
+
+
+###########################################################################
+# fix kerberos config files 
+###########################################################################
+krb () {
+  local file
+  local cfile
+  for file in `ls /etc/krb*.cernvm 2> /dev/null`
+  do
+    cd /etc
+    cfile=`basename $file .cernvm`
+    if [ -f $cfile ]; then
+      if ! diff -q $file $cfile > /dev/null; then
+        mv $cfile $cfile.bak
+        cp $file $cfile
+      fi
+    else
+      cp $file $cfile  
+    fi
+  done
+}
+
+
+###########################################################################
+# remove initial dns config
+###########################################################################
+dns () {
+   if [ -f /etc/resolv.conf.predhclient  ]
+   then
+     rm -f /etc/resolv.conf.predhclient 
+   fi
+}
+
+
+###########################################################################
+# DONT Disable ipv6
+###########################################################################
+ipv6 () {
+  if [ -f /etc/modprobe.conf ]
+  then 
+    if  [ `grep -c "alias ipv6 off" /etc/modprobe.conf` -eq 0  ]
+    then
+       echo "alias ipv6 off" >>  /etc/modprobe.conf
+    fi
+    if  [ `grep -c "alias net-pf-10 off" /etc/modprobe.conf` -eq 0  ]
+    then
+       echo "alias net-pf-10 off" >>  /etc/modprobe.conf
+    fi
+  fi
+}
+
+###########################################################################
+# fix ntpd.conf
+###########################################################################
+ntp () {
+  if [ `grep -c -e "^OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
+  then
+    sed -ie 's/\(^OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
+  fi 
+  if [ `grep -c -e "^NTPDATE_OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
+  then
+    sed -ie 's/\(^NTPDATE_OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
+  fi 
+}
+
+###########################################################################
+# Create missing directory
+###########################################################################
+nfs () {
+  mkdir -p /var/lib/nfs/rpc_pipefs
+  chmod 755 /var/lib/nfs/rpc_pipefs
+}
+
+###########################################################################
+# allow ssh key injection only once appliance is configured
+###########################################################################
+ssh () {
+  local file
+  local cfile
+  for file in `ls /etc/ssh/sshd_config.cernvm 2> /dev/null`
+  do
+    cd /etc/ssh
+    cfile=`basename $file .cernvm`
+    if [ -f $cfile ]; then
+      if ! diff -q $file $cfile > /dev/null; then
+        mv $cfile $cfile.bak
+        cp -f $file $cfile  
+      fi
+    else
+      cp -f $file $cfile  
+    fi
+  done
+
+  if [ -f /etc/cernvm/site.conf ]
+  then  
+    if [ ! -d /root/.ssh ] 
+    then
+      mkdir -p /root/.ssh
+      chmod 600 /root/.ssh
+    fi
+  fi
+}
+
+###########################################################################
+# Fix timeout and /etc/auto.master
+###########################################################################
+autofs () {
+  if [ -f /etc/sysconfig/autofs ]
+  then
+    sed -i 's/^TIMEOUT=300/TIMEOUT=86400/' /etc/sysconfig/autofs
+    chmod 0755 /bin/fusermount
+    chmod u+s /bin/fusermount
+  fi
+}
+
+###########################################################################
+# Fix timeozone
+###########################################################################
+timezone () {
+  for dir in /usr/share/zoneinfo /usr/share/zoneinfo/posix
+  do
+     ln -sf $dir/GMT /etc/localtime
+  done
+}
+
+
+###########################################################################
+# show URL in GDM greeter screen.
+###########################################################################
+greeter () {
+  local issue
+  local file
+  issue=`grep "Web management console" /etc/issue | awk -F"https:" '{printf("Web management console: https:%s",$2)}'` 
+  if [ -d /etc/gdm ]
+  then
+     if [ ! -f /etc/gdm/gdm.conf -a -f /etc/X11/gdm/gdm.conf.cernvm ]
+     then
+        cp /etc/X11/gdm/gdm.conf.cernvm /etc/gdm/gdm.conf
+     fi 
+  fi
+  for file in /etc/X11/gdm/gdm.conf  /etc/gdm/gdm.conf
+  do  
+    if [ -f $file ] 
+    then
+      if [ -f /usr/share/gdm/themes/cernvm/cernvm.xml ]
+      then
+        sed -i "s%GraphicalTheme=.*%GraphicalTheme=cernvm%" $file
+        sed -i "s%Web management console:.*% $issue%" /usr/share/gdm/themes/cernvm/cernvm.xml
+      else
+        sed -i "s%#InfoMsgFile=%InfoMsgFile=/etc/issue%" $file
+      fi
+    fi
+  done
+}
+
+###########################################################################
+# fixes for Gnome on RH
+###########################################################################
+gnome () {
+  if [ -d /etc/gtk-2.0/${arch}-redhat-linux-gnu ]
+  then
+    if [ ! -s /etc/gtk-2.0/${arch}-redhat-linux-gnu/gdk-pixbuf.loaders ]
+    then
+      if [ -x /usr/bin/update-gdk-pixbuf-loaders ] 
+      then
+         /usr/bin/update-gdk-pixbuf-loaders ${arch}-redhat-linux-gnu
+      fi
+    fi
+    if [ ! -s /etc/gtk-2.0/${arch}-redhat-linux-gnu/gtk.immodules ]
+    then
+      if [ -x /usr/bin/update-gtk-immodules ] 
+      then
+         /usr/bin/update-gtk-immodules ${arch}-redhat-linux-gnu
+      fi
+    fi
+  fi
+
+  if [  -d  /etc/pango/${arch}-redhat-linux-gnu -a \
+      ! -s  /etc/pango/${arch}-redhat-linux-gnu/pango.modules ] 
+  then
+    case "$arch" in
+      x86_64*)
+        /usr/bin/pango-querymodules-64 > /etc/pango/${arch}-redhat-linux-gnu/pango.modules 
+       ;;
+       *)
+        /usr/bin/pango-querymodules-32 > /etc/pango/${arch}-redhat-linux-gnu/pango.modules 
+       ;;
+    esac
+  fi
+ 
+  if [ -x /usr/X11R6/bin/X -o -x /usr/bin/X ]
+  then
+     mkdir -p /usr/share/icons/hicolor
+     if [ -x /usr/bin/gtk-update-icon-cache ]
+     then
+       gtk-update-icon-cache -q /usr/share/icons/hicolor
+     fi
+  fi
+}
+
+###########################################################################
+#  fix X11 directories
+###########################################################################
+x11dirs () {
+    [ ! -d /etc/dbus-1/session.d ] && mkdir -p /etc/dbus-1/session.d 
+    [ ! -d /var/lib/xkb ] && mkdir -p /var/lib/xkb
+    if [ -d /usr/X11R6/lib64 ]
+    then
+       if [ ! -d /usr/X11R6/lib64/X11/fonts ]
+       then
+         ln -sf /usr/X11R6/lib/X11/fonts /usr/X11R6/lib64/X11/fonts
+       fi
+    fi 
+}
+
+
+###########################################################################
+#  apply xfce4 theme files
+###########################################################################
+xfce4 () {
+    if [ -d /etc/xdg/xfce4 ]; then
+        for theme_file in `find /etc/xdg/xfce4 -type f -name '*.cernvm'`; do
+            cfile=`dirname $theme_file`/`basename $theme_file .cernvm`
+	    if [ -f $cfile ]; then
+                if ! diff -q $theme_file $cfile > /dev/null; then
+                  cp $cfile $cfile.bak
+                  cp $theme_file $cfile
+                fi
+            else
+                cp $theme_file $cfile
+            fi
+        done
+        rm -f \
+          /etc/xdg/autostart/xfce4-tips-autostart.desktop \
+          /etc/xdg/autostart/nm-applet.desktop
+    fi
+}
+
+
+###########################################################################
+#  DEPRECATED attach console to tty1
+###########################################################################
+tty1_console () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+    eval `/sbin/grubby --info=$kernel`
+    /sbin/grubby  --args="$args console=tty1" --update-kernel=$kernel
+  fi
+}
+
+###########################################################################
+#  DEPRECATED attach serial console to ttyS0
+###########################################################################
+serial_console () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+    eval `/sbin/grubby --info=$kernel`
+    /sbin/grubby  --args="$args console=tty0 console=ttyS0,115200n8" --update-kernel=$kernel
+  fi
+}
+
+###########################################################################
+#  DEPRECATED? disable apic
+###########################################################################
+grub_noapic_option () {
+  #kernel=`/sbin/grubby --default-kernel`
+  if [ x$kernel != x ]
+  then
+    eval `/sbin/grubby --info=$kernel`
+    /sbin/grubby  --args="$args noapic nolapic" --update-kernel=$kernel
+  fi
+}
+
+
+###########################################################################
+#  turn off plymouth
+###########################################################################
+plymouth () {
+  if [ -f /bin/plymouth -a ! -L /bin/plymouth ]; then
+    mv /bin/plymouth /bin/plymouth.disabled
+    ln -s /bin/true /bin/plymouth
+  fi
+}
+
+
+###########################################################################
+# Prerun lengthy cron jobs
+###########################################################################
+precron() {
+  echo "  --> mlocate"
+  /etc/cron.daily/mlocate.cron
+  echo "  --> makewhatis"
+  /etc/cron.daily/makewhatis.cron
+  echo "  --> prelink"
+  /etc/cron.daily/prelink
+  echo "  --> readahead"
+  /etc/cron.daily/readahead.cron
+}
+
+
+###########################################################################
+#  define eth0 on Xen kernels
+###########################################################################
+xen_eth0 () {
+  mkdir -p /etc/sysconfig/network-scripts
+  cat <<EOF>/etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+BOOTPROTO=dhcp
+ONBOOT=yes
+TYPE=Ethernet
+EOF
+  chmod 644 /etc/sysconfig/network-scripts/ifcfg-eth0
+}
+
+
+###########################################################################
+platform=$1; arch=$2
+###########################################################################
+
+#case "$model-$arch" in
+#    *-ext3-*)
+#        EXTRA_ACTIONS='xen_xvc0 xen_eth0'
+#        ;;
+#    *-node-hdd-x86_64)
+#        EXTRA_ACTIONS='serial_console virtio grub_noapic_option grub_divider_option'
+#        ;;
+#    *-node-hdd-*)
+#        EXTRA_ACTIONS='virtio grub_noapic_option grub_divider_option'
+#        ;;
+#    *-hdd-*)
+#        EXTRA_ACTIONS='virtio grub_noapic_option grub_divider_option'
+#        ;;
+#    *-desktop-vpc-*)
+#        EXTRA_ACTIONS='grub_divider_option grub_vga_option fstab'
+#        ;;
+#    *-vpc-)
+#        EXTRA_ACTIONS='grub_divider_option grub_vga_option'
+#        ;;
+#    *-desktop-vmdk-*) 
+#        EXTRA_ACTIONS='grub_divider_option disable_nmi_watchdog fstab'
+#        ;;
+#    *-vmdk-*) 
+#        EXTRA_ACTIONS='grub_divider_option disable_nmi_watchdog'
+#        ;;
+#    *-desktop-*) 
+#        EXTRA_ACTIONS='grub_divider_option fstab'
+#        ;;
+#    *) 
+#        EXTRA_ACTIONS='grub_divider_option'
+#        ;;
+#esac
+
+for action in $DEFAULT_ACTIONS $EXTRA_ACTIONS
+do
+  echo "**** Executing $action for $platform ($arch)"
+  ( $action ) || echo "**** Error: $action for $model ($arch) failed."
+done

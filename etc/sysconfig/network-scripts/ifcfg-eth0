@@ -1,0 +1,6 @@
+# Device file installed by uCernVM
+DEVICE=eth0
+BOOTPROTO=dhcp
+ONBOOT=yes
+TYPE=Ethernet
+NM_CONTROLLED=no
