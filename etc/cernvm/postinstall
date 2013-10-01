@@ -17,12 +17,21 @@
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen \
-                 cernvm_appliance_agent localcert" 
+                 cernvm_appliance_agent localcert gconf" 
 ###########################################################################
 # reset root password
 ###########################################################################
 reset_root_password() {
   env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+}
+
+
+###########################################################################
+# gconf defaults
+###########################################################################
+gconf() {
+  gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.defaults \
+    /apps/procman/show_all_fs --type bool --set true
 }
 
 
