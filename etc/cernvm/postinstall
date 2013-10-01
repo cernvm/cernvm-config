@@ -182,7 +182,6 @@ cernvm () {
   /sbin/chkconfig --add vmcontext_epilog
   /sbin/chkconfig --add cernvm-release
   /sbin/chkconfig --add cernvm-appliance-agent
-  /sbin/chkconfig cernvm-appliance-agent off
   mkdir -p /mnt/cdrom
 }
 
@@ -202,6 +201,7 @@ localcert () {
 cernvm_appliance_agent () {
   if ! /usr/bin/getent passwd cernvm-appliance-agent > /dev/null; then 
     /usr/sbin/useradd -r cernvm-appliance-agent
+    chmod -R cernvm-appliance-agent /etc/cernvm-appliance-agent
   fi
 }
 
