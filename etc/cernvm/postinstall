@@ -182,6 +182,7 @@ cernvm () {
   /sbin/chkconfig --add vmcontext_epilog
   /sbin/chkconfig --add cernvm-release
   /sbin/chkconfig --add cernvm-appliance-agent
+  /sbin/chkconfig cernvm-appliance-agent reset
   mkdir -p /mnt/cdrom
 }
 
