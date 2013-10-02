@@ -416,7 +416,7 @@ while getopts ?rhxpuc:d:s: opt
                  then 
                    groupadd -f -r ${group} > /dev/null 2>&1
                  fi
-                 if [ -f /etc/sudoers.cernvm ] 
+                 if [ ! -f /etc/firstboot ] 
                  then 
                     mv -f /etc/sudoers.cernvm /etc/sudoers
 	            chmod 0440 /etc/sudoers
