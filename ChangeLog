@@ -1,3 +1,7 @@
+2013-10-04 Jakob Blomer
+A	etc/sysconfig/init.cernvm
+M	etc/cernvm/postinstall
+
 2013-10-02 Jakob Blomer
 M	etc/cernvm/config
 

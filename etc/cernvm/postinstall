@@ -17,7 +17,7 @@
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen \
-                 cernvm_appliance_agent localcert gconf" 
+                 cernvm_appliance_agent localcert gconf ttyinit" 
 ###########################################################################
 # reset root password
 ###########################################################################
@@ -52,6 +52,18 @@ updatedb() {
     cp /etc/updatedb.conf.cernvm /etc/updatedb.conf 
   fi  
 }
+
+
+###########################################################################
+# Reduce number of ttys
+###########################################################################
+ttyinit() {
+  if ! diff -q /etc/sysconfig/init /etc/sysconfig/init.cernvm > /dev/null; then
+    mv /etc/sysconfig/init /etc/sysconfig/init.bak
+    cp /etc/sysconfig/init.cernvm /etc/sysconfig/init
+  fi  
+}
+
 
 
 ###########################################################################
