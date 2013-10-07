@@ -1,6 +1,6 @@
 if [ x"$CERNVM_ENV" = x ]
 then 
-  for file in /etc/cernvm/default.conf /etc/cernvm/site.conf
+  for file in /etc/cernvm/default.conf /etc/cernvm/site.conf /etc/cernvm/environment.conf
   do
     if [ -r $file ]
     then
