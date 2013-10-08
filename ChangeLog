@@ -1,3 +1,6 @@
+2013-10-08 Jakob Blomer
+M	etc/cernvm/config
+
 2013-10-07 Jakob Blomer
 M	etc/profile.d/cernvm.sh
 M	etc/profile.d/cernvm.csh

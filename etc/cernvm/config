@@ -14,13 +14,6 @@ getConfig() {
 
   if [ $? -eq 0 ]
   then
-     if [ -f /etc/conary/config.d/httpProxy ]  
-     then
-        http_proxy=`grep -e "^proxy.*http:" /etc/conary/config.d/httpProxy | cut -f3`
-        proxy_host=`echo $http_proxy | awk -F"://|:" '{print $2}'`
-        mkdir -p /etc/cernvm/proxies
-        mv -f /etc/conary/config.d/httpProxy /etc/cernvm/proxies/$proxy_host
-     fi
      return 0
   fi
 
@@ -31,7 +24,6 @@ getConfig() {
     env http_proxy="http:$cvmfs_proxy" curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
     if [ $? -eq 0 ]
     then
-       printf "proxy\thttp\thttp:%s\n" $cvmfs_proxy > /etc/conary/config.d/httpProxy
        return 0
     fi
   fi
@@ -44,13 +36,10 @@ getConfig() {
         env http_proxy="$http_proxy" curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
         if [ $? -eq 0 ]
         then
-           cp -f $file /etc/conary/config.d/httpProxy
            return 0 
-          fi
+        fi
      done 
   fi
-
-  sed -ie 's%/changepassword%/configure/Proxy","/changepassword%' /etc/raa/custom.cfg
 
   return 1
 }
@@ -80,59 +69,6 @@ verifyConfig() {
   fi
   echo $content | sed 's/ /\n/g' > $cfg
   return $result
-}
-
-cernvm_service () {
-  conary q $1 > /dev/null 2>&1 
-  if [ $? -eq  0 ]
-  then
-    case "$1" in
-        enable)
-         service_action="start"
-         service_state="stop"
-        ;;
-        disable)
-         service_action="stop"
-         service_state="off"
-        ;;
-        *) 
-        return
-    esac
-    shift 1
-    for service in $*
-    do   
-      if [ -f /etc/init.d/$service ]
-      then
-        /sbin/chkconfig --level 35 $service $service_state || true
-        /etc/init.d/$service $service_action || true  
-      fi 
-    done 
-  fi 
-}
-
-install_group_profile() {
-  for g in $*
-  do   
-    case $g in
-      group-none*)
-       ;; 
-      *) 
-        conary q $g > /dev/null 2>&1
-        if [ $? -eq  1 ]
-        then
-          label=`conary q group-core --info | grep Label.*: | sed 's/.*: cernvm/cernvm/'`
-          version=`conary q group-core | awk -F= '{print $2}'`
-          conary rq "$g=$label/$version" 
-          if [ $? -eq 0 ]
-          then
-            conary update "$g=$label/$version"
-          fi
-        fi
-      ;;
-    esac
-  done >> /var/log/cernvm-update.log 2>&1
-  cernvm_service group-cernvm-batch disable raa raa-appliance raa-lighttpd raa-restore copilot-agent copilot-context-agent >> /var/log/cernvm-update.log 2>&1 
-  cernvm_service group-boinc enable copilot-agent  >> /var/log/cernvm-update.log 2>&1 
 }
 
 customize_desktop() {
@@ -238,8 +174,6 @@ cernvm_config () {
 
   touch /etc/cernvm/default.conf > /dev/null 2>&1 || exit 1
 
-  rm -rf /etc/conary/config.d/cernvmProxy
-
   for org in $organisations
   do
     local cfg=`mktemp`
@@ -271,7 +205,7 @@ cernvm_config () {
        fi
      fi
      rm -rf $cfg
-  done | sort -u > /etc/cernvm/default.conf+
+  done | sort -u | sed -e 's/^CVMFS_HTTP_PROXY=\(.*\)/CVMFS_HTTP_PROXY="\1"/' > /etc/cernvm/default.conf+
 
   if [ -s /etc/cernvm/default.conf+ ]
   then
@@ -363,16 +297,10 @@ while getopts ?rhxpuc:d:s: opt
 
                  case x$CERNVM_EDITION in
                     xBasic)
-                      for org in $organisations
-                      do
-                        install_group_profile group-${org}
-                      done
+                      :
                       ;;
                     xDesktop)
-                      for org in $organisations
-                      do
-                        install_group_profile group-${org}-desktop
-                      done
+                      :
                       ;;
                     *)
                       ;;
@@ -383,8 +311,7 @@ while getopts ?rhxpuc:d:s: opt
                  ;;
           x)     customize_desktop
                  ;;
-          g)     install_group_profile $OPTARG
-                 exit 0
+          g)     exit 0
                  ;;
           p)     config_proxy=1
                  ;;
