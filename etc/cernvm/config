@@ -122,7 +122,7 @@ cernvm_config () {
   do
     if [ -r /etc/cernvm/$file.conf ]
     then
-      eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+      eval `cat /etc/cernvm/$file.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
     fi
   done
 
@@ -215,7 +215,7 @@ cernvm_config () {
 
   if [ -s /etc/cernvm/default.conf ]
   then
-      eval `sed 's/=\$(.*)//g' /etc/cernvm/default.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+      eval `cat /etc/cernvm/default.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
   fi
 
   if [ "x$CERNVM_TZONE" != "x" ]
