@@ -1,3 +1,7 @@
+2013-10-10 Jakob Blomer
+M	etc/cernvm/postinstall
+A	etc/selinux/config.cernvm
+
 2013-10-08 Jakob Blomer
 M	etc/cernvm/config
 

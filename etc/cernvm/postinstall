@@ -17,7 +17,7 @@
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen \
-                 cernvm_appliance_agent localcert gconf ttyinit" 
+                 cernvm_appliance_agent localcert gconf ttyinit selinux" 
 ###########################################################################
 # reset root password
 ###########################################################################
@@ -51,6 +51,17 @@ updatedb() {
     mv /etc/updatedb.conf /etc/updatedb.conf.bak
     cp /etc/updatedb.conf.cernvm /etc/updatedb.conf 
   fi  
+}
+
+
+###########################################################################
+# disable selinux
+###########################################################################
+selinux() {
+  if ! diff -q /etc/selinux/config /etc/selinux/config.cernvm > /dev/null; then
+    mv /etc/selinux/config /etc/selinux/config.bak
+    cp /etc/selinux/config.cernvm /etc/selinux/config
+  fi
 }
 
 
