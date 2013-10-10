@@ -2,7 +2,7 @@ set id=`id -u`
 if ( ! $?CERNVM_ENV ) then
   foreach file (/etc/cernvm/default.conf /etc/cernvm/site.conf /etc/cernvm/environment.conf)
     if ( -r $file ) then
-      eval `sed 's/=\$(.*)//g' $file | sed -n -e '/^[^+]/s/\(\\\$[^ ]*\)/"\\\\\1"/' -e '/^[^+]/s/\([^=]*\)[=]\(.*\)/setenv \1 \"\2\";/gp'`
+      eval `cat $file | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e '/^[^+]/s/\(\\\$[^ ]*\)/"\\\\\1"/' -e '/^[^+]/s/\([^=]*\)[=]\(.*\)/setenv \1 \"\2\";/gp'`
     endif
   end
   if ( $?CERNVM_ENVIRONMENT_VARS ) then

@@ -4,7 +4,7 @@ then
   do
     if [ -r $file ]
     then
-      eval `sed 's/=\$(.*)//g' $file |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+      eval `cat $file | tr -d \" | sed 's/=\$(.*)//g' |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
     fi
   done
   if [ "x$CERNVM_ENVIRONMENT_VARS" != "x" ]

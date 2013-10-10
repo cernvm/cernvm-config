@@ -3,7 +3,7 @@ for file in default site
 do
   if [ -e /etc/cernvm/$file.conf ]
   then
-      eval `sed 's/=\$(.*)//g' /etc/cernvm/$file.conf |  sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+      eval `cat /etc/cernvm/$file.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
   fi
 done
 
