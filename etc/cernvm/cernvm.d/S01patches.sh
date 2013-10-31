@@ -7,8 +7,8 @@ cernvm_start () {
     cd /etc/cernvm/patches.d
     find . ! -name CONTENT -type f | while read FILE; do
       if [ -f "/$FILE" ]; then
-        if ! diff "$FILE" "/$FILE"; then
-          cp "$FILE" "/$FILE"
+        if [ "$FILE" -nt "/$FILE" ]; then
+          cp -a "$FILE" "/$FILE"
         fi
       fi  
     done
