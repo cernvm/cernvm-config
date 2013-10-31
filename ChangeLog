@@ -1,3 +1,7 @@
+2013-10-30 Jakob Blomer
+A	etc/cernvm/cernvm.d/01patches.sh
+A	etc/cernvm/patches.d
+
 2013-10-10 Jakob Blomer
 M	etc/profile.d/cernvm.sh
 M	etc/profile.d/cernvm.csh
