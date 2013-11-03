@@ -1,3 +1,6 @@
+2013-11-03 Jakob Blomer
+M	etc/cernvm/cernvm.s/S11vboxtools.sh
+
 2013-10-30 Jakob Blomer
 A	etc/cernvm/cernvm.d/01patches.sh
 A	etc/cernvm/patches.d

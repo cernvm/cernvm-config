@@ -55,11 +55,16 @@ cernvm_start () {
         . /etc/cernvm/site.conf
         if [ "x$CERNVM_USER" != "x" ]
 	then
+           modprobe vboxsf
            uid=`id -u $CERNVM_USER`
            gid=`id -g $CERNVM_USER`
-           mkdir -p /mnt/shared/$CERNVM_USER
-           chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${CERNVM_USER} > /dev/null 2>&1
-           mount -t vboxsf -o uid=$uid,gid=$gid $CERNVM_USER /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 || true
+           sflist=$(VBoxControl sharedfolder list | grep '^[0-9][0-9]* - ' | awk '{print $3}' | tr '\n' ' ')
+           for folder in $sflist; do
+             cat /proc/mounts | awk '{print $2}' | grep -q "^/mnt/shared/${folder}$" && continue
+             mkdir -p /mnt/shared/${folder}
+             chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${folder} > /dev/null 2>&1
+             mount -t vboxsf -o uid=$uid,gid=$gid ${folder} /mnt/shared/${folder} > /dev/null 2>&1 || true
+           done
         fi
      fi
   )
