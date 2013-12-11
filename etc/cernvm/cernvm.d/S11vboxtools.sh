@@ -34,6 +34,7 @@ cernvm_start () {
                     VBoxControl guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
                     if [ $? -eq 0 ]; then
                         echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf;
+                        echo "CERNVM_HYPERVISOR=virtualbox" >> /etc/cernvm/tools.conf;
                     fi;
                     if [ -x /usr/X11R6/bin/X -o -x /usr/bin/X ]; then
                       rm -f /etc/X11/xorg.conf
@@ -53,7 +54,7 @@ cernvm_start () {
      if [ -f /etc/cernvm/site.conf ] 
      then
         . /etc/cernvm/site.conf
-        if [ "x$CERNVM_USER" != "x" ]
+        if [ "x$CERNVM_USER" != "x" ] && [ "x$CERNVM_HYPERVISOR" = "xvirtualbox" ]
 	then
            modprobe vboxsf
            uid=`id -u $CERNVM_USER`
