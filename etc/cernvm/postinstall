@@ -14,10 +14,11 @@
 # 14-Jun-2011
 #C<
 ###########################################################################
-DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
-                 context gnome x11dirs xfce4 network_manager plymouth ucernvm \
-                 condor ganglia xrootd openldap precron updatedb screen \
-                 cernvm_appliance_agent localcert gconf ttyinit selinux" 
+DEFAULT_ACTIONS="cernvm kudzu"
+#DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
+#                 context gnome x11dirs xfce4 network_manager plymouth ucernvm \
+#                 condor ganglia xrootd openldap precron updatedb screen \
+#                 cernvm_appliance_agent localcert gconf ttyinit selinux" 
 ###########################################################################
 # reset root password
 ###########################################################################
@@ -40,6 +41,17 @@ gconf() {
 ###########################################################################
 screen() {
   chmod 1777 /var/run/screen
+}
+
+
+###########################################################################
+# Auto kudzu
+###########################################################################
+kudzu() {
+  if ! diff -q /etc/sysconfig/kudzu /etc/sysconfig/kudzu.cernvm > /dev/null; then
+    mv /etc/sysconfig/kudzu /etc/sysconfig/kudzu.bak
+    cp /etc/sysconfig/kudzu.cernvm /etc/sysconfig/kudzu
+  fi
 }
 
 
@@ -198,14 +210,14 @@ cvmfs () {
 ###########################################################################
 cernvm () {
   /sbin/chkconfig --add cernvm
-  /sbin/chkconfig --add cernvm-context
-  /sbin/chkconfig --add amiconfig-cernvm
-  /sbin/chkconfig --add vmcontext_hepix
-  /sbin/chkconfig --add vmcontext_prolog
-  /sbin/chkconfig --add vmcontext_epilog
-  /sbin/chkconfig --add cernvm-release
-  /sbin/chkconfig --add cernvm-appliance-agent
-  /sbin/chkconfig cernvm-appliance-agent reset
+  #/sbin/chkconfig --add cernvm-context
+  #/sbin/chkconfig --add amiconfig-cernvm
+  #/sbin/chkconfig --add vmcontext_hepix
+  #/sbin/chkconfig --add vmcontext_prolog
+  #/sbin/chkconfig --add vmcontext_epilog
+  #/sbin/chkconfig --add cernvm-release
+  #/sbin/chkconfig --add cernvm-appliance-agent
+  #/sbin/chkconfig cernvm-appliance-agent reset
   mkdir -p /mnt/cdrom
 }
 
