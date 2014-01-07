@@ -407,7 +407,7 @@ nfs () {
 ssh () {
   local file
   local cfile
-  for file in `ls /etc/ssh/sshd_config.cernvm 2> /dev/null`
+  for file in `ls /etc/ssh/sshd_config.cernvm /etc/ssh/ssh_config.cernvm 2> /dev/null`
   do
     cd /etc/ssh
     cfile=`basename $file .cernvm`
