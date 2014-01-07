@@ -1,5 +1,10 @@
+2014-01-07 Jakob Blomer
+A	etc/ssh/ssh_config
+
 2013-12-11 Jakob Blomer
-M	etc/cernvm/cernvm.s/S11vboxtools.sh
+M	etc/cernvm/postinstall
+A	etc/cernvm/cernvm.d/S90reinstallpackages.sh
+M	etc/cernvm/cernvm.d/S11vboxtools.sh
 
 2013-11-11 Jakob Blomer
 M	etc/cernvm/postinstall

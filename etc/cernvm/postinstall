@@ -16,7 +16,7 @@
 ###########################################################################
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
-                 condor ganglia xrootd openldap precron updatedb screen \
+                 condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp" 
 ###########################################################################
 # reset root password
@@ -33,6 +33,14 @@ afs() {
   echo "cern.ch" > /usr/vice/etc/ThisCell
   chkconfig afs off
   rmdir /afs
+}
+
+
+###########################################################################
+# turn off sssd
+###########################################################################
+sssd() {
+  chkconfig sssd off
 }
 
 
