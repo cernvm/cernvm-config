@@ -9,7 +9,7 @@ if ( ! $?CERNVM_ENV ) then
     foreach var (`echo $CERNVM_ENVIRONMENT_VARS | sed 's/+/ /g'`)
       echo setenv $var `eval echo \$$var`
     end
-  fi
+  endif
   if ( $id > 0 ) then
     if ( ! ($?CERNVM_DOMAIN) ) then
       setenv CERNVM_DOMAIN cern.ch
