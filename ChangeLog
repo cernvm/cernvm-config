@@ -1,3 +1,6 @@
+2014-01-18 Jakob Blomer
+M	etc/profile.d/cernvm.csh
+
 2014-01-07 Jakob Blomer
 M	etc/cernvm/postinstall
 A	etc/ssh/ssh_config
