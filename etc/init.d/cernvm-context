@@ -10,7 +10,7 @@
 RETVAL=0
 
 start() {
-  echo -n $"Starting CernVM contextualization: "
+  echo -n $"Running CernVM context boot hooks: "
   RETVAL=0
   for f in ${cernvm_scripts}
   do
