@@ -325,7 +325,7 @@ while getopts ?rhxpuc:d:s: opt
                  shift $(($OPTIND - 1))                
          	 user=$1
 	         shell=$2
-	         passwd=$3
+	         passwd="$3"
 	         group=$4
 	         if [ "x$user" = x ]; then
 		   exit 0
@@ -372,7 +372,11 @@ while getopts ?rhxpuc:d:s: opt
                    groups=${groups}${group}
                    usermod -G $groups $user || true
                  fi
-                 echo $passwd | passwd --stdin $user
+                 if [ "$(echo $passwd | head -c3)" != '$6$' ]; then
+                   echo $passwd | passwd --stdin $user
+                 else
+                   usermod -p "$passwd" $user
+                 fi
                  exit $?
 	         ;;
          \?|h)   printf "Usage: %s: [-x][-s <config server url>][-p][-d <dir>][-c <config file>] CERNVM_ORGANISATION=<ALICE,ATLAS...>\n"  $0 
