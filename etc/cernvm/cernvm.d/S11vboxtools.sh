@@ -67,6 +67,12 @@ cernvm_start () {
              mount -t vboxsf -o uid=$uid,gid=$gid ${folder} /mnt/shared/${folder} > /dev/null 2>&1 || true
            done
         fi
+        # Fix xorg.conf
+        if grep -q vbox /etc/X11/xorg.conf && grep -q CERNVM_DISPLAY_MODE /etc/X11/xorg.conf
+        then
+          cp /etc/X11/xorg.conf /etc/X11/xorg.conf.bak
+          cp /etc/X11/xorg.conf.vbox.cernvm /etc/X11/xorg.conf
+        fi
      fi
   )
 }
