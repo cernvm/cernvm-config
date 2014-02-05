@@ -68,10 +68,12 @@ cernvm_start () {
            done
         fi
         # Fix xorg.conf
-        if grep -q vbox /etc/X11/xorg.conf && grep -q CERNVM_DISPLAY_MODE /etc/X11/xorg.conf
-        then
-          cp /etc/X11/xorg.conf /etc/X11/xorg.conf.bak
-          cp /etc/X11/xorg.conf.vbox.cernvm /etc/X11/xorg.conf
+        if [ -f /etc/X11/xorg.conf ]; then
+          if grep -q vbox /etc/X11/xorg.conf && grep -q CERNVM_DISPLAY_MODE /etc/X11/xorg.conf
+          then
+            cp /etc/X11/xorg.conf /etc/X11/xorg.conf.bak
+            cp /etc/X11/xorg.conf.vbox.cernvm /etc/X11/xorg.conf
+          fi
         fi
      fi
   )
