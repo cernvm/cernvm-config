@@ -1,4 +1,5 @@
 2014-02-05 Jakob Blomer
+A	etc/cernvm/cernvm.d/S99upstart.sh
 M	etc/cernvm/cernvm.d/S11vboxtools.sh
 M	.ucernvm_bootstrap
 
