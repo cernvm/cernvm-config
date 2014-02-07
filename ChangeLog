@@ -1,3 +1,7 @@
+2014-02-07 Jakob Blomer
+M	etc/cernvm/postinstall
+A	etc/xrdp/startwm.sh.cernvm
+
 2014-02-05 Jakob Blomer
 A	etc/cernvm/cernvm.d/S99upstart.sh
 M	etc/cernvm/cernvm.d/S11vboxtools.sh

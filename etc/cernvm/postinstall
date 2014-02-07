@@ -48,6 +48,10 @@ sssd() {
 # turn off xrdp
 ###########################################################################
 xrdp() {
+  if ! diff -q /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.cernvm > /dev/null; then
+    mv /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.bak
+    cp /etc/xrdp/startwm.sh.cernvm /etc/xrdp/startwm.sh
+  fi
   chkconfig xrdp off
 }
 
