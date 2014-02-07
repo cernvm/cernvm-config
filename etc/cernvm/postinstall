@@ -17,12 +17,29 @@
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
-                 cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp" 
+                 cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
+                 shoal rabbitmq" 
 ###########################################################################
 # reset root password
 ###########################################################################
 reset_root_password() {
   env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+}
+
+
+###########################################################################
+# turn off rabbitmq
+###########################################################################
+rabbitmq() {
+  chkconfig rabbitmq-server off
+}
+
+
+###########################################################################
+# turn off shoal
+###########################################################################
+shoal() {
+  :
 }
 
 
