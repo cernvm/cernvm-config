@@ -19,6 +19,19 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
                  shoal rabbitmq" 
+
+########################################################################### 
+# Helper
+###########################################################################
+replace_config() {
+  config_file="$1"
+
+  if ! diff -q "$config_file" "${config_file}.cernvm" > /dev/null; then
+    mv "$config_file" "${config_file}.bak"
+    cp "${config_file}.cernvm" "$config_file"
+  fi
+}
+
 ###########################################################################
 # reset root password
 ###########################################################################

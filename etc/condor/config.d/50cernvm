@@ -26,3 +26,8 @@ PREEMPT = FALSE
 KILL = FALSE
 ##  Disable UID_DOMAIN check when submit a job
 TRUST_UID_DOMAIN = TRUE
+
+##  Use TCP instead of UDP, and cache TCP sockets
+##  (more reliable on some cloud networks)
+UPDATE_COLLECTOR_WITH_TCP = True
+COLLECTOR_SOCKET_CACHE_SIZE = 1000

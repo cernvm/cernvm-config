@@ -1,3 +1,6 @@
+2014-03-10 Jakob Blomer
+M	etc/condor/config.d/50cernvm
+
 2014-02-07 Jakob Blomer
 M	etc/cernvm/postinstall
 A	etc/xrdp/startwm.sh.cernvm
