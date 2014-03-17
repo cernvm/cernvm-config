@@ -653,12 +653,17 @@ plymouth () {
 # Prerun lengthy cron jobs
 ###########################################################################
 precron() {
+  echo "  --> ghc-doc-index"
+  chmod -x /etc/cron.hourly/ghc-doc-index
+  /bin/sh /etc/cron.hourly/ghc-doc-index
   echo "  --> mlocate"
   /etc/cron.daily/mlocate.cron
   echo "  --> makewhatis"
-  /etc/cron.daily/makewhatis.cron
+  chmod -x /etc/cron.daily/makewhatis.cron
+  /bin/sh /etc/cron.daily/makewhatis.cron
   echo "  --> prelink"
-  /etc/cron.daily/prelink
+  chmod -x /etc/cron.daily/prelink
+  /bin/sh /etc/cron.daily/prelink
   echo "  --> readahead"
   /etc/cron.daily/readahead.cron
 }

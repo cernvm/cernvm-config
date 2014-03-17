@@ -1,3 +1,6 @@
+2014-03-17 Jakob Blomer
+M	etc/cernvm/postinstall
+
 2014-03-10 Jakob Blomer
 M	etc/condor/config.d/50cernvm
 
