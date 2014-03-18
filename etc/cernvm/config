@@ -4,6 +4,24 @@ setDefaultRunlevel() {
    sed -i -e "s/id:.:initdefault/id:$1:initdefault:/" /etc/inittab
 }
 
+switchAutoLogin() {
+  local how=$1
+
+  if [ "x$how" = "xon" ]; then
+    sed -i -e "/^auto_login[ \t]*/d" /etc/slim.conf
+    sed -i -e "/^default_user[ \t]*/d" /etc/slim.conf
+    echo "default_user $CERNVM_USER" >> /etc/slim.conf
+    echo "auto_login yes" >> /etc/slim.conf
+  elif [ "x$how" = "xoff" ]; then
+    sed -i -e "/^auto_login[ \t]*/d" /etc/slim.conf
+    sed -i -e "/^default_user[ \t]*/d" /etc/slim.conf
+  else
+    echo "unknown option to switchAutoLogin: $how" 1>&2
+    return 1
+  fi
+  return 0
+}
+
 getConfig() {
   local cfg=$1
   local url=$2
@@ -108,6 +126,10 @@ customize_desktop() {
 	    then
 	    /usr/bin/system-config-keyboard --noui $CERNVM_KEYBOARD > /dev/null 2>&1
 	fi
+	if [ "x$CERNVM_AUTOLOGIN" == "xon" -o "x$CERNVM_AUTOLOGIN" == "xoff" ]
+        then
+          switchAutoLogin $CERNVM_AUTOLOGIN
+        fi
     else 
 	# when not in desktop mode , turn off xdm
         [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm off
