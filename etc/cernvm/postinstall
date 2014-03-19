@@ -24,11 +24,12 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
 # Helper
 ###########################################################################
 replace_config() {
-  config_file="$1"
+  local config_file="$1"
+  local replacement="$2"
 
-  if ! diff -q "$config_file" "${config_file}.cernvm" > /dev/null; then
+  if ! diff -q "$config_file" "$replacement" > /dev/null; then
     mv "$config_file" "${config_file}.bak"
-    cp "${config_file}.cernvm" "$config_file"
+    cp "$replacement" "$config_file"
   fi
 }
 
@@ -78,10 +79,7 @@ sssd() {
 # turn off xrdp
 ###########################################################################
 xrdp() {
-  if ! diff -q /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.cernvm > /dev/null; then
-    mv /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.bak
-    cp /etc/xrdp/startwm.sh.cernvm /etc/xrdp/startwm.sh
-  fi
+  replace_config /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.cernvm
   chkconfig xrdp off
 }
 
@@ -107,10 +105,7 @@ screen() {
 # remove /cvmfs, /mnt from updatedb
 ###########################################################################
 updatedb() {
-  if ! diff -q /etc/updatedb.conf /etc/updatedb.conf.cernvm > /dev/null; then
-    mv /etc/updatedb.conf /etc/updatedb.conf.bak
-    cp /etc/updatedb.conf.cernvm /etc/updatedb.conf 
-  fi  
+  replace_config /etc/updatedb.conf /etc/updatedb.conf.cernvm
 }
 
 
@@ -118,10 +113,7 @@ updatedb() {
 # disable selinux
 ###########################################################################
 selinux() {
-  if ! diff -q /etc/selinux/config /etc/selinux/config.cernvm > /dev/null; then
-    mv /etc/selinux/config /etc/selinux/config.bak
-    cp /etc/selinux/config.cernvm /etc/selinux/config
-  fi
+  replace_config /etc/selinux/config /etc/selinux/config.cernvm 
 }
 
 
@@ -129,74 +121,9 @@ selinux() {
 # Reduce number of ttys
 ###########################################################################
 ttyinit() {
-  if ! diff -q /etc/sysconfig/init /etc/sysconfig/init.cernvm > /dev/null; then
-    mv /etc/sysconfig/init /etc/sysconfig/init.bak
-    cp /etc/sysconfig/init.cernvm /etc/sysconfig/init
-  fi  
+  replace_config /etc/sysconfig/init /etc/sysconfig/init.cernvm
 }
 
-
-
-###########################################################################
-# DEPRECATED Set default options
-###########################################################################
-default_kernel_options () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-     eval `/sbin/grubby --info=$kernel`
-     /sbin/grubby  --args="ro root=LABEL=root noresume crashkernel=1M@16M" --update-kernel=$kernel
-  fi 
-}
-###########################################################################
-# DEPRECATED? Disable nmi_watchdog
-###########################################################################
-disable_nmi_watchdog () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-     eval `/sbin/grubby --info=$kernel`
-     /sbin/grubby  --args="$args nmi_watchdog=0" --update-kernel=$kernel
-  fi 
-}
-###########################################################################
-# DEPRECATED Configure splashy theme for cernvm
-###########################################################################
-splashy () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-    eval `/sbin/grubby --info=$kernel`
-    if [ -f /usr/share/splashy/themes/cernvm/theme.xml ]
-    then
-      splashy_config -s cernvm
-      if [ $? -eq 0 ]
-      then
-       /sbin/grubby --args="$args console=tty1 vga=0x317 rhgb" --update-kernel=$kernel
-      fi
-    fi
-  fi 
-}
-
-###########################################################################
-# DEPRECATED Set divider=10 option
-###########################################################################
-grub_divider_option () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-    config=`echo $kernel | sed 's/vmlinuz/config/'`
-    if [ -f $config ]
-    then
-      if [ `grep -c ^CONFIG_HZ_1000=y $config` -eq 1 ]
-      then
-        /sbin/grubby  --remove-args="notsc" --update-kernel=$kernel
-        eval `/sbin/grubby --info=$kernel`
-        /sbin/grubby  --args="$args divider=10" --update-kernel=$kernel
-      fi
-    fi
-  fi 
-}
 
 ###########################################################################
 # TODO create an entry in inittab to allow console login
@@ -352,14 +279,8 @@ xrootd () {
 # Fixes for network and halt scripts
 ###########################################################################
 ucernvm () {
-  if ! diff -q /etc/init.d/halt /etc/init.d/halt.ucernvm > /dev/null; then
-    mv /etc/init.d/halt /etc/init.d/halt.bak
-    cp /etc/init.d/halt.ucernvm /etc/init.d/halt
-  fi
-  if ! diff -q /etc/init.d/network /etc/init.d/network.ucernvm > /dev/null; then
-    mv /etc/init.d/network /etc/init.d/network.bak
-    cp /etc/init.d/network.ucernvm /etc/init.d/network
-  fi
+  replace_config /etc/init.d/halt /etc/init.d/halt.ucernvm
+  replace_config /etc/init.d/network /etc/init.d/network.ucernvm
 }
 
 
@@ -433,6 +354,7 @@ ntp () {
 nfs () {
   mkdir -p /var/lib/nfs/rpc_pipefs
   chmod 755 /var/lib/nfs/rpc_pipefs
+  replace_config /etc/sysconfig/nfs /etc/sysconfig/nfs.cernvm
 }
 
 ###########################################################################
@@ -602,43 +524,6 @@ xfce4 () {
 
 
 ###########################################################################
-#  DEPRECATED attach console to tty1
-###########################################################################
-tty1_console () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-    eval `/sbin/grubby --info=$kernel`
-    /sbin/grubby  --args="$args console=tty1" --update-kernel=$kernel
-  fi
-}
-
-###########################################################################
-#  DEPRECATED attach serial console to ttyS0
-###########################################################################
-serial_console () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-    eval `/sbin/grubby --info=$kernel`
-    /sbin/grubby  --args="$args console=tty0 console=ttyS0,115200n8" --update-kernel=$kernel
-  fi
-}
-
-###########################################################################
-#  DEPRECATED? disable apic
-###########################################################################
-grub_noapic_option () {
-  #kernel=`/sbin/grubby --default-kernel`
-  if [ x$kernel != x ]
-  then
-    eval `/sbin/grubby --info=$kernel`
-    /sbin/grubby  --args="$args noapic nolapic" --update-kernel=$kernel
-  fi
-}
-
-
-###########################################################################
 #  turn off plymouth
 ###########################################################################
 plymouth () {
@@ -687,39 +572,6 @@ EOF
 ###########################################################################
 platform=$1; arch=$2
 ###########################################################################
-
-#case "$model-$arch" in
-#    *-ext3-*)
-#        EXTRA_ACTIONS='xen_xvc0 xen_eth0'
-#        ;;
-#    *-node-hdd-x86_64)
-#        EXTRA_ACTIONS='serial_console virtio grub_noapic_option grub_divider_option'
-#        ;;
-#    *-node-hdd-*)
-#        EXTRA_ACTIONS='virtio grub_noapic_option grub_divider_option'
-#        ;;
-#    *-hdd-*)
-#        EXTRA_ACTIONS='virtio grub_noapic_option grub_divider_option'
-#        ;;
-#    *-desktop-vpc-*)
-#        EXTRA_ACTIONS='grub_divider_option grub_vga_option fstab'
-#        ;;
-#    *-vpc-)
-#        EXTRA_ACTIONS='grub_divider_option grub_vga_option'
-#        ;;
-#    *-desktop-vmdk-*) 
-#        EXTRA_ACTIONS='grub_divider_option disable_nmi_watchdog fstab'
-#        ;;
-#    *-vmdk-*) 
-#        EXTRA_ACTIONS='grub_divider_option disable_nmi_watchdog'
-#        ;;
-#    *-desktop-*) 
-#        EXTRA_ACTIONS='grub_divider_option fstab'
-#        ;;
-#    *) 
-#        EXTRA_ACTIONS='grub_divider_option'
-#        ;;
-#esac
 
 for action in $DEFAULT_ACTIONS $EXTRA_ACTIONS
 do
