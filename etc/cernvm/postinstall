@@ -15,15 +15,23 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
-                 context gnome x11dirs xfce4 network_manager plymouth ucernvm \
-                 condor ganglia xrootd openldap precron updatedb screen sssd \
-                 cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq" 
+                 context gnome x11dirs xfce4 network_manager \
+                 condor ganglia xrootd openldap updatedb screen sssd \
+                 localcert gconf selinux xrdp \
+                 shoal rabbitmq system-release"  
 ###########################################################################
 # reset root password
 ###########################################################################
 reset_root_password() {
   env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+}
+
+
+###########################################################################
+# creates /etc/system-release
+###########################################################################
+system-release() {
+  [ ! -f /etc/system-release ] && ln -s /etc/redhat-release /etc/system-release
 }
 
 
@@ -251,8 +259,6 @@ cernvm () {
   /sbin/chkconfig --add vmcontext_prolog
   /sbin/chkconfig --add vmcontext_epilog
   /sbin/chkconfig --add cernvm-release
-  /sbin/chkconfig --add cernvm-appliance-agent
-  /sbin/chkconfig cernvm-appliance-agent reset
   mkdir -p /mnt/cdrom
 }
 

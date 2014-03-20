@@ -28,4 +28,3 @@ root	ALL=(ALL) ALL
 # %users  ALL=/sbin/mount /cdrom,/sbin/umount /cdrom
 %users ALL=(root) NOPASSWD: /sbin/shutdown
 
-#includedir /etc/sudoers.d
