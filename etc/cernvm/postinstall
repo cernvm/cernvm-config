@@ -345,7 +345,8 @@ ntp () {
   if [ `grep -c -e "^NTPDATE_OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
   then
     sed -ie 's/\(^NTPDATE_OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
-  fi 
+  fi
+  chkconfig ntpd on 
 }
 
 ###########################################################################
