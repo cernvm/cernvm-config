@@ -6,8 +6,8 @@ if [ "x$UCONTEXT_SRC" = "xEC2" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
 fi
 
-if [ "x$UCONTEXT_SRC" = "xCloudStack" ]; then
-  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, CloudStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_cloudstack.cfg
+if [ "x$UCONTEXT_SRC" = "xOpenStack" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, OpenStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_openstack.cfg
 fi
 
 if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
