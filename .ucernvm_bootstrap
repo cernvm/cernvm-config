@@ -2,6 +2,11 @@
 
 ROOT_PATH=$1
 
+if [ ! -f ${ROOT_PATH}/mnt/.rw/afs-cache -a -f ${ROOT_PATH}/usr/vice/cache ]; then
+  mv ${ROOT_PATH}/usr/vice/cache ${ROOT_PATH}/mnt/.rw/afs-cache
+  ln -s /mnt/.rw/afs-cache ${ROOT_PATH}/usr/vice/cache
+fi  
+
 if [ "x$UCONTEXT_SRC" = "xEC2" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
 fi
