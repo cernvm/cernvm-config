@@ -62,7 +62,11 @@ shoal() {
 ###########################################################################
 afs() {
   echo "cern.ch" > /usr/vice/etc/ThisCell
+  chkconfig openafs-client off
   chkconfig afs off
+  if [ -f /etc/init.d/openafs-client -a ! -f /etc/init.d/afs ]; then
+    ln -s /etc/init.d/openafs-client /etc/init.d/afs
+  fi
   rmdir /afs
 }
 
