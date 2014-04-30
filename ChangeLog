@@ -1,3 +1,6 @@
+2014-04-30 Jakob Blomer
+A	etc/cernvm/cernvm.d/S30shm
+
 2014-04-29 Jakob Blomer
 M	.ucernvm_bootstrap
 M	etc/cernvm/postinstall
