@@ -12,5 +12,6 @@ prepend-path  LD_LIBRARY_PATH  $compiler/lib64
 prepend-path  LD_LIBRARY_PATH  $compiler/lib
 prepend-path  LD_LIBRARY_PATH  $rootsys/lib
 prepend-path  PYTHON_PATH      $rootsys/lib
+prepend-path  PATH             $compiler/bin
 prepend-path  PATH             $rootsys/bin
 prepend-path  MANPATH          $rootsys/man
