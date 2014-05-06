@@ -1,0 +1,98 @@
+#!/bin/sh
+set -e
+
+NAME=
+DISK_SIZE=
+MEM_SIZE=
+USER_DATA=
+ROOT_KEY=
+CONTEXT_ISO=
+IMAGE=
+
+create_context_iso() {
+  if [ "x${USER_DATA}${ROOT_KEY}" != "x" ]; then
+    mkdir ${TEMP_DIR}/context
+    if [ "x${ROOT_KEY}" != "x" ]; then
+      cp "$ROOT_KEY" ${TEMP_DIR}/context/root.pub
+      echo "ROOT_PUBKEY=root.pub" >> ${TEMP_DIR}/context/context.sh
+    fi
+    
+    if [ "x${USER_DATA}" != "x" ]; then
+      user_data_base64=$(base64 --wrap=0 "${USER_DATA}")
+      echo "EC2_USER_DATA=\"$user_data_base64\"" >> ${TEMP_DIR}/context/context.sh
+    fi
+    
+    echo "ONE_CONTEXT_PATH=\"/var/lib/amiconfig\"" >> ${TEMP_DIR}/context/context.sh
+    touch ${TEMP_DIR}/context/prolog.sh
+    
+    mkisofs -o ${TEMP_DIR}/context.iso ${TEMP_DIR}/context
+    CONTEXT_ISO=${TEMP_DIR}/context.iso
+  fi
+}
+
+while getopts n:d:m:i:u:k:h opt; do
+  case $opt in
+    n)
+      NAME="$OPTARG"
+    ;;
+    d)
+      DISK_SIZE="$OPTARG"
+    ;;
+    m)
+      MEM_SIZE="$OPTARG"
+    ;;
+    i)
+      IMAGE="$OPTARG"
+    ;;
+    u)
+      USER_DATA="$OPTARG"
+    ;;
+    k)
+      ROOT_KEY="$OPTARG"
+    ;;        
+    x)
+      X509_CERT="$OPTARG"
+    ;;  
+    \?|h)
+      echo "Usage: $0 -n <NAME> -d <SIZE MB> -m <SIZE MB> -i <IMAGE VERSION> [-u <USER DATA>] [-k <ROOT SSH KEY>]"
+      echo "Example: $0 -n MyVM -d 20000 -m 1024 -i ucernvm-devel.1.17-11.cernvm.x86_64.hdd -u user-data.txt -k mykey.pub"
+      exit 0
+    ;;  
+  esac
+done
+
+TEMP_DIR=$(mktemp -d)
+
+create_context_iso
+
+VBoxManage convertfromraw "$IMAGE" ${TEMP_DIR}/boot.vdi
+VBoxManage clonehd ${TEMP_DIR}/boot.vdi ${TEMP_DIR}/boot.vmdk --format VMDK --variant Stream
+VBoxManage createhd --filename ${TEMP_DIR}/scratch.vmdk --size "$DISK_SIZE" --format VMDK --variant Stream
+VBoxManage createvm --name "$NAME" --ostype Linux26_64 --register
+VBoxManage storagectl "$NAME" --name SATA --add sata --portcount 4 --bootable on
+VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --nic2 hostonly --natdnsproxy1 on --natdnsproxy2 on --clipboard bidirectional --draganddrop hosttoguest
+while pgrep VBoxSVC > /dev/null; do true; done
+VBoxManage storageattach "$NAME" --storagectl SATA --port 0 --type hdd --medium ${TEMP_DIR}/boot.vmdk
+VBoxManage storageattach "$NAME" --storagectl SATA --port 1 --type hdd --medium ${TEMP_DIR}/scratch.vmdk
+if [ "x$CONTEXT_ISO" != "x" ]; then
+  VBoxManage storageattach "$NAME" --storagectl SATA --port 2 --type dvddrive --medium "$CONTEXT_ISO"
+fi
+VBoxManage export "$NAME" -o "${TEMP_DIR}/${NAME}.ova" --vsys 0 --iso --product "CernVM" --producturl "http://cernvm.cern.ch"
+
+rm -rf "${HOME}/VirtualBox VMs/${NAME}"
+rm -f ${TEMP_DIR}/*.vmdk ${TEMP_DIR}/*.vdi  ${TEMP_DIR}/*.iso
+
+pushd ${TEMP_DIR}
+tar xf "${NAME}.ova"
+cat "${NAME}.ovf" | \
+  sed -e 's/MACAddress="[0-9A-Z]*"//' | sed -e 's/HostOnlyInterface name=""/HostOnlyInterface name="vboxnet0"/' > "${NAME}.ovf~"
+mv "${NAME}.ovf~" "${NAME}.ovf"
+rm -f "${NAME}.ova"
+if [ "x$CONTEXT_ISO" != "x" ]; then
+  tar cf "${NAME}.ova" "${NAME}.ovf" *.vmdk *.iso
+else
+  tar cf "${NAME}.ova" "${NAME}.ovf" *.vmdk
+fi  
+popd
+mv "${TEMP_DIR}/${NAME}.ova" .
+rm -rf "${TEMP_DIR}"
