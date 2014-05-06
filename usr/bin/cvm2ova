@@ -70,7 +70,7 @@ VBoxManage clonehd ${TEMP_DIR}/boot.vdi ${TEMP_DIR}/boot.vmdk --format VMDK --va
 VBoxManage createhd --filename ${TEMP_DIR}/scratch.vmdk --size "$DISK_SIZE" --format VMDK --variant Stream
 VBoxManage createvm --name "$NAME" --ostype Linux26_64 --register
 VBoxManage storagectl "$NAME" --name SATA --add sata --portcount 4 --bootable on
-VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --nic2 hostonly --natdnsproxy1 on --natdnsproxy2 on --clipboard bidirectional --draganddrop hosttoguest
+VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --nic2 hostonly --natdnshostresolver1 on --natdnshostresolver2 on --clipboard bidirectional --draganddrop hosttoguest
 while pgrep VBoxSVC > /dev/null; do true; done
 VBoxManage storageattach "$NAME" --storagectl SATA --port 0 --type hdd --medium ${TEMP_DIR}/boot.vmdk
 VBoxManage storageattach "$NAME" --storagectl SATA --port 1 --type hdd --medium ${TEMP_DIR}/scratch.vmdk
