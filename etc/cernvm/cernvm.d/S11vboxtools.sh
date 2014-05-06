@@ -51,6 +51,9 @@ cernvm_start () {
                 ;;
          esac;
      fi
+     if [ "x$CERNVM_HYPERVISOR" = "xvirtualbox" ]; then
+       VBoxControl guestproperty set "/VirtualBox/GuestAdd/CheckHostVersion" 0 >/dev/null 2>&1
+     fi
      if [ -f /etc/cernvm/site.conf ] 
      then
         . /etc/cernvm/site.conf
