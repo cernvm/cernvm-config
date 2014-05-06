@@ -89,6 +89,26 @@ verifyConfig() {
   return $result
 }
 
+create_desktop_icons() {
+  for file in $CONFIG_FILES
+    do
+    if [ -e /etc/cernvm/$file.conf ]
+        then
+        eval `cat /etc/cernvm/$file.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'`
+    fi
+  done
+
+  if [ "x$CERNVM_DESKTOP_ICONS" != "x" ]; then
+    mkdir -p /etc/skel/Desktop
+    for icon in $(echo "$CERNVM_DESKTOP_ICONS" | sed 's/%/ /g'); do
+      name=$(echo "$icon" | cut -d, -f1 | sed 's/~/ /g')
+      entry=$(echo "$icon" | cut -d, -f2 | sed 's/~/ /g')
+      echo "$entry" | base64 -d > "/etc/skel/Desktop/${name}.desktop"
+    done
+  fi
+}
+
+
 customize_desktop() {
     #This function will do the following only if CERNVM_EDITION is Desktop
     #  1. change Resolution by patching /etc/x11/xorg.conf
@@ -277,7 +297,7 @@ config_dir=/etc/cernvm
 config_url=""
 CONFIG_FILES="config default tools domain site machine custom"
 
-while getopts ?rhxpuc:d:s: opt 
+while getopts ?rhxypuc:d:s: opt 
      do
           case $opt in
           c)     config_opt=1 
@@ -332,6 +352,8 @@ while getopts ?rhxpuc:d:s: opt
           d)     config_dir="$OPTARG"
                  ;;
           x)     customize_desktop
+                 ;;
+          y)     create_desktop_icons
                  ;;
           g)     exit 0
                  ;;
