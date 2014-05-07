@@ -6,14 +6,17 @@ DISK_SIZE=
 MEM_SIZE=
 USER_DATA=
 ROOT_KEY=
-CONTEXT_ISO=
+CONTEXT_HDD=
 IMAGE=
 
-create_context_iso() {
+create_context_image() {
   if [ "x${USER_DATA}${ROOT_KEY}" != "x" ]; then
+    mkdosfs -C ${TEMP_DIR}/context.fat 992
     mkdir ${TEMP_DIR}/context
+    
     if [ "x${ROOT_KEY}" != "x" ]; then
       cp "$ROOT_KEY" ${TEMP_DIR}/context/root.pub
+      mcopy -i ${TEMP_DIR}/context.fat "$ROOT_KEY"::/root.pub
       echo "ROOT_PUBKEY=root.pub" >> ${TEMP_DIR}/context/context.sh
     fi
     
@@ -24,9 +27,16 @@ create_context_iso() {
     
     echo "ONE_CONTEXT_PATH=\"/var/lib/amiconfig\"" >> ${TEMP_DIR}/context/context.sh
     touch ${TEMP_DIR}/context/prolog.sh
+    mcopy -i ${TEMP_DIR}/context.fat ${TEMP_DIR}/context/prolog.sh ::/prolog.sh
+    mcopy -i ${TEMP_DIR}/context.fat ${TEMP_DIR}/context/context.sh ::/context.sh
     
-    mkisofs -o ${TEMP_DIR}/context.iso ${TEMP_DIR}/context
-    CONTEXT_ISO=${TEMP_DIR}/context.iso
+    mkisofs -o "${NAME}.context.iso" ${TEMP_DIR}/context
+    
+    dd if=/dev/zero of=${TEMP_DIR}/context.hdd bs=1024 count=1024
+    echo "0,," | sfdisk -uM -C32 -H1 -S63 ${TEMP_DIR}/context.hdd
+    dd if=${TEMP_DIR}/context.fat of=${TEMP_DIR}/context.hdd bs=512 seek=1
+    rm -f ${TEMP_DIR}/context.fat
+    CONTEXT_HDD=${TEMP_DIR}/context.hdd
   fi
 }
 
@@ -63,19 +73,22 @@ done
 
 TEMP_DIR=$(mktemp -d)
 
-create_context_iso
+create_context_image
 
-VBoxManage convertfromraw "$IMAGE" ${TEMP_DIR}/boot.vdi
-VBoxManage clonehd ${TEMP_DIR}/boot.vdi ${TEMP_DIR}/boot.vmdk --format VMDK --variant Stream
+VBoxManage convertfromraw "$IMAGE" ${TEMP_DIR}/boot.vmdk --format VMDK --variant Stream
 VBoxManage createhd --filename ${TEMP_DIR}/scratch.vmdk --size "$DISK_SIZE" --format VMDK --variant Stream
+if [ "x$CONTEXT_HDD" != "x" ]; then
+  VBoxManage convertfromraw "$CONTEXT_HDD" ${TEMP_DIR}/context.vmdk --format VMDK --variant Stream
+  CONTEXT_HDD=${TEMP_DIR}/context.vmdk
+fi
 VBoxManage createvm --name "$NAME" --ostype Linux26_64 --register
 VBoxManage storagectl "$NAME" --name SATA --add sata --portcount 4 --hostiocache on --bootable on
 VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --nic2 hostonly --natdnshostresolver1 on --natdnshostresolver2 on --clipboard bidirectional --draganddrop hosttoguest
 while pgrep VBoxSVC > /dev/null; do true; done
 VBoxManage storageattach "$NAME" --storagectl SATA --port 0 --type hdd --medium ${TEMP_DIR}/boot.vmdk
 VBoxManage storageattach "$NAME" --storagectl SATA --port 1 --type hdd --medium ${TEMP_DIR}/scratch.vmdk
-if [ "x$CONTEXT_ISO" != "x" ]; then
-  VBoxManage storageattach "$NAME" --storagectl SATA --port 2 --type dvddrive --medium "$CONTEXT_ISO"
+if [ "x$CONTEXT_HDD" != "x" ]; then  
+  VBoxManage storageattach "$NAME" --storagectl SATA --port 2 --type hdd --medium "$CONTEXT_HDD"
 fi
 VBoxManage export "$NAME" -o "${TEMP_DIR}/${NAME}.ova" --vsys 0 --iso --product "CernVM" --producturl "http://cernvm.cern.ch"
 
@@ -88,11 +101,7 @@ cat "${NAME}.ovf" | \
   sed -e 's/MACAddress="[0-9A-Z]*"//' | sed -e 's/HostOnlyInterface name=""/HostOnlyInterface name="vboxnet0"/' > "${NAME}.ovf~"
 mv "${NAME}.ovf~" "${NAME}.ovf"
 rm -f "${NAME}.ova"
-if [ "x$CONTEXT_ISO" != "x" ]; then
-  tar cf "${NAME}.ova" "${NAME}.ovf" *.vmdk *.iso
-else
-  tar cf "${NAME}.ova" "${NAME}.ovf" *.vmdk
-fi  
+tar cf "${NAME}.ova" "${NAME}.ovf" *.vmdk
 popd
 mv "${TEMP_DIR}/${NAME}.ova" .
 rm -rf "${TEMP_DIR}"
