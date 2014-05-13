@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager \
                  condor ganglia xrootd openldap updatedb screen sssd \
                  localcert gconf selinux xrdp \
-                 shoal rabbitmq system-release"  
+                 shoal rabbitmq system_release ucernvm"  
 ###########################################################################
 # reset root password
 ###########################################################################
@@ -30,7 +30,7 @@ reset_root_password() {
 ###########################################################################
 # creates /etc/system-release
 ###########################################################################
-system-release() {
+system_release() {
   [ ! -f /etc/system-release ] && ln -s /etc/redhat-release /etc/system-release
 }
 
@@ -353,6 +353,21 @@ ucernvm () {
     mv /etc/init.d/network /etc/init.d/network.bak
     cp /etc/init.d/network.ucernvm /etc/init.d/network
   fi
+  [ -f /etc/modprobe.d/blacklist-firewire ] && mv /etc/modprobe.d/blacklist-firewire /etc/modprobe.d/blacklist-firewire.conf
+  chkconfig yum off
+  echo '
+--- /mnt/.ro/cvm3/etc/udev/rules.d/05-udev-early.rules  2013-01-09 04:03:50.000000000 +0100
++++ /etc/udev/rules.d/05-udev-early.rules       2014-03-24 16:01:17.990484723 +0100
+@@ -1,7 +1,7 @@
+ # sysfs is populated after the event is sent
+ ACTION=="add", DEVPATH=="/devices/*", ENV{PHYSDEVBUS}=="?*", WAIT_FOR_SYSFS="bus"
+ ACTION=="add", SUBSYSTEM=="net", WAIT_FOR_SYSFS="address"
+-ACTION=="add", SUBSYSTEM=="scsi", WAIT_FOR_SYSFS="ioerr_cnt"                    
++ACTION=="add", SUBSYSTEM=="scsi", KERNEL=="[0-9]*:[0-9]*", WAIT_FOR_SYSFS="ioerr_cnt"
+ 
+ # ignore these events until someone needs them
+ SUBSYSTEM=="drivers",          OPTIONS="ignore_device"
+' | patch -N /etc/udev/rules.d/05-udev-early.rules
 }
 
 

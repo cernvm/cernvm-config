@@ -2,12 +2,17 @@
 
 ROOT_PATH=$1
 
+if [ ! -d ${ROOT_PATH}/mnt/.rw/afs-cache -a -d ${ROOT_PATH}/usr/vice/cache ]; then
+  mv ${ROOT_PATH}/usr/vice/cache ${ROOT_PATH}/mnt/.rw/afs-cache
+  ln -s /mnt/.rw/afs-cache ${ROOT_PATH}/usr/vice/cache
+fi  
+
 if [ "x$UCONTEXT_SRC" = "xEC2" ]; then
-  grep OVF ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/OVF/OVF, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
 fi
 
-if [ "x$UCONTEXT_SRC" = "xCloudStack" ]; then
-  grep OVF ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/OVF/OVF, CloudStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_cloudstack.cfg
+if [ "x$UCONTEXT_SRC" = "xOpenStack" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, OpenStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_openstack.cfg
 fi
 
 if [ "x$UCONTEXT_SRC" = "xGCE" ]; then

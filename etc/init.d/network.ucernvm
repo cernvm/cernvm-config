@@ -8,16 +8,13 @@
 #
 ### BEGIN INIT INFO
 # Provides: $network
-# Should-Start: iptables ip6tables
-# Short-Description: Bring up/down networking
-# Description: Bring up/down networking
 ### END INIT INFO
 
 # Source function library.
 . /etc/init.d/functions
 
 if [ ! -f /etc/sysconfig/network ]; then
-    exit 6
+    exit 0
 fi
 
 . /etc/sysconfig/network
@@ -28,12 +25,18 @@ fi
 
 
 # Check that networking is up.
-[ "${NETWORKING}" = "no" ] && exit 6
+[ "${NETWORKING}" = "no" ] && exit 0
 
 # if the ip configuration utility isn't around we can't function.
 [ -x /sbin/ip ] || exit 1
 
-CWD=$(pwd)
+# Even if IPX is configured, without the utilities we can't do much
+[ ! -x /sbin/ipx_internal_net -o ! -x /sbin/ipx_configure ] && IPX=
+
+# Even if VLAN is configured, without the utility we can't do much
+[ ! -x /sbin/vconfig ] && VLAN=
+
+CWD=`pwd`
 cd /etc/sysconfig/network-scripts
 
 . ./network-functions
@@ -46,16 +49,17 @@ interfaces=$(ls ifcfg* | \
 		       -e '/ifcfg-[A-Za-z0-9#\._-]\+$/ { s/^ifcfg-//g;s/[0-9]/ &/}' | \
 	    LANG=C sort -k 1,1 -k 2n | \
 	    LANG=C sed 's/ //')
-rc=0
 
+rc=0
 # See how we were called.
 case "$1" in
   start)
-	[ "$EUID" != "0" ] && exit 4
-	rc=0
+  	rc=0
 	# IPv6 hook (pre IPv4 start)
-	if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
-		/etc/sysconfig/network-scripts/init.ipv6-global start pre
+	if [ "$NETWORKING_IPV6" = "yes" ]; then
+		if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
+			/etc/sysconfig/network-scripts/init.ipv6-global start pre
+		fi
 	fi
   
 	apply_sysctl
@@ -63,15 +67,29 @@ case "$1" in
 	# bring up loopback interface
 	action $"Bringing up loopback interface: " ./ifup ifcfg-lo
 
+	case "$IPX" in
+	  yes|true)
+	    /sbin/ipx_configure --auto_primary=$IPXAUTOPRIMARY \
+				   --auto_interface=$IPXAUTOFRAME
+	    if [ "$IPXINTERNALNETNUM" != "0" ]; then
+	       /sbin/ipx_internal_net add $IPXINTERNALNETNUM $IPXINTERNALNODENUM
+	    fi
+	    ;;
+	esac
+
 	case "$VLAN" in
 	  yes)
-	    if [ ! -d /proc/net/vlan ] && ! modprobe 8021q >/dev/null 2>&1 ; then
+	    if [ -d /proc/net/vlan ] || modprobe 8021q >/dev/null 2>&1 ; then
+		test -z "$VLAN_NAME_TYPE" && VLAN_NAME_TYPE=DEV_PLUS_VID_NO_PAD
+		action $"Setting 802.1Q VLAN parameters: " /sbin/vconfig set_name_type "$VLAN_NAME_TYPE"
+	    else
 		net_log $"No 802.1Q VLAN support available in kernel."
 	    fi
 	    ;;
 	esac
 
 	vlaninterfaces=""
+	vpninterfaces=""
 	xdslinterfaces=""
 	bridgeinterfaces=""
 
@@ -84,10 +102,10 @@ case "$1" in
 
 		if [ -z "$DEVICE" ] ; then DEVICE="$i"; fi
 
-		if [ "$SLAVE" = "yes" ]; then
+		if [ "${DEVICE##cipcb}" != "$DEVICE" ] ; then
+			vpninterfaces="$vpninterfaces $i"
 			continue
 		fi
-
 		if [ "$TYPE" = "xDSL" ]; then
 		        xdslinterfaces="$xdslinterfaces $i"
 			continue
@@ -97,12 +115,20 @@ case "$1" in
 		        bridgeinterfaces="$bridgeinterfaces $i"
 			continue
 		fi
+		if [ "$TYPE" = "IPSEC" ]; then
+			vpninterfaces="$vpninterfaces $i"
+			continue
+		fi
 
 		if [ "${DEVICE%%.*}" != "$DEVICE"  -o  "${DEVICE##vlan}" != "$DEVICE" ] ; then
 			vlaninterfaces="$vlaninterfaces $i"
 			continue
 		fi
 		
+		if [ "$SLAVE" = "yes" ]; then
+			continue
+		fi
+
 		if LANG=C egrep -L "^ONBOOT=['\"]?[Nn][Oo]['\"]?" ifcfg-$i > /dev/null ; then
 		        # this loads the module, to preserve ordering
 			is_available $i
@@ -114,11 +140,11 @@ case "$1" in
 			test $? = 1 && continue
 		fi
 		action $"Bringing up interface $i: " ./ifup $i boot
-		[ $? -ne 0 ] && rc=1
+		rc=$((rc+$?))
 	done
 	
 	# Bring up xDSL and VPN interfaces
-	for i in $vlaninterfaces $bridgeinterfaces $xdslinterfaces ; do
+	for i in $vlaninterfaces $bridgeinterfaces $xdslinterfaces $vpninterfaces ; do
             if ! LANG=C egrep -L "^ONBOOT=['\"]?[Nn][Oo]['\"]?" ifcfg-$i >/dev/null 2>&1 ; then
 		# If we're in confirmation mode, get user confirmation.
 		if [ -f /var/run/confirm ]; then
@@ -126,7 +152,7 @@ case "$1" in
 			test $? = 1 && continue
 		fi
 		action $"Bringing up interface $i: " ./ifup $i boot
-		[ $? -ne 0 ] && rc=1
+		rc=$((rc+$?))
 	    fi
         done
 
@@ -136,44 +162,60 @@ case "$1" in
               /sbin/route add -$args
 	   done
 	fi    
-	# Add non interface-specific static arp entries.
-	if [ -f /etc/ethers ]; then
-		/sbin/arp -f /etc/ethers
-	fi
 
  	# IPv6 hook (post IPv4 start)
- 	if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
- 		/etc/sysconfig/network-scripts/init.ipv6-global start post
+ 	if [ "$NETWORKING_IPV6" = "yes" ]; then
+ 		if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
+ 			/etc/sysconfig/network-scripts/init.ipv6-global start post
+ 		fi
  	fi
 	# Run this again to catch any interface-specific actions
 	apply_sysctl
  
-	touch /var/lock/subsys/network
+        touch /var/lock/subsys/network
 
 	[ -n "${NETWORKDELAY}" ] && /bin/sleep ${NETWORKDELAY}
         ;;
   stop)
-	[ "$EUID" != "0" ] && exit 4
-  	[ "x$STOPSTART" = "x" ] && exit 1
+	# uCernVM
+	[ "x$STOPSTART" = x ] && exit 1  
 	# Don't shut the network down if root is on NFS or a network
 	# block device.
         rootfs=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/" && $3 != "rootfs") { print $3; }}' /proc/mounts)
         rootopts=$(awk '{ if ($1 !~ /^[ \t]*#/ && $2 == "/") { print $4; }}' /etc/mtab)
 	
-	if [[ "$rootfs" == nfs* || "$rootopts" =~ _r?netdev ]] ; then
+	if [[ "$rootfs" =~ "^nfs" ]] || [[ "$rootopts" =~ "_netdev|_rnetdev" ]] ; then
 		exit 1
 	fi
   
   	# If this is a final shutdown/halt, check for network FS,
 	# and unmount them even if the user didn't turn on netfs
 	if [ "$RUNLEVEL" = "6" -o "$RUNLEVEL" = "0" -o "$RUNLEVEL" = "1" ]; then
-		NETMOUNTS=$(findmnt -m -t nfs,nfs4,smbfs,ncpfs,cifs 2>/dev/null)
-		if [ -n "$NETMOUNTS" ] ; then
+		NFSMTAB=`LC_ALL=C awk '$3  ~ /^nfs/ { print $2 }' /proc/mounts`
+		SMBMTAB=`LC_ALL=C awk '$3 == "smbfs" { print $2 }' /proc/mounts`
+		NCPMTAB=`LC_ALL=C awk '$3 == "ncpfs" { print $2 }' /proc/mounts`
+		if [ -n "$NFSMTAB" -o -n "$SMBMTAB" -o -n "$NCPMTAB" ] ; then
 			/etc/init.d/netfs stop
 		fi
 	fi
+
+	# If this is a final shutdown/halt and there is an iSCSI session,
+	# do not stop the service.
+	if [ "$RUNLEVEL" = "6" -o "$RUNLEVEL" = "0" -o "$RUNLEVEL" = "1" ]; then
+	        if [ $(ls -d /sys/class/iscsi_session/*/. 2>/dev/null | wc -l) -ge 1 ]; then
+			exit 1
+		fi
+	fi
 	
+ 	# IPv6 hook (pre IPv4 stop)
+ 	if [ "$NETWORKING_IPV6" = "yes" ]; then
+ 		if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
+ 			/etc/sysconfig/network-scripts/init.ipv6-global stop pre
+ 		fi
+ 	fi
+ 
 	vlaninterfaces=""
+	vpninterfaces=""
 	xdslinterfaces=""
 	bridgeinterfaces=""
 	remaining=""
@@ -187,6 +229,14 @@ case "$1" in
 
 		if [ -z "$DEVICE" ] ; then DEVICE="$i"; fi
 
+		if [ "${DEVICE##cipcb}" != "$DEVICE" ] ; then
+			vpninterfaces="$vpninterfaces $i"
+			continue
+		fi
+		if [ "$TYPE" = "IPSEC" ]; then
+			vpninterfaces="$vpninterfaces $i"
+			continue
+		fi
 		if [ "$TYPE" = "Bridge" ]; then
 		        bridgeinterfaces="$bridgeinterfaces $i"
 		        continue
@@ -203,24 +253,45 @@ case "$1" in
 		remaining="$remaining $i"
 	done
 	
-	for i in $xdslinterfaces $bridgeinterfaces $vlaninterfaces $remaining; do
-		(. ./ifcfg-$i
+	for i in $vpninterfaces $xdslinterfaces $bridgeinterfaces $vlaninterfaces $remaining; do
+		(. ifcfg-$i
 		if [ -z "$DEVICE" ] ; then DEVICE="$i"; fi
 
 		if ! check_device_down $DEVICE; then
 		   action $"Shutting down interface $i: " ./ifdown $i boot
-		   [ $? -ne 0 ] && rc=1
+		   rc=$((rc+$?))
 		fi
 		)
 	done
 
+	case "$IPX" in
+	  yes|true)
+	    if [ "$IPXINTERNALNETNUM" != "0" ]; then
+	       /sbin/ipx_internal_net del
+	    fi
+	    ;;
+	esac
+
 	action $"Shutting down loopback interface: " ./ifdown ifcfg-lo
 
-	sysctl -w net.ipv4.ip_forward=0 > /dev/null 2>&1
+	if [ -d /proc/sys/net/ipv4 ]; then
+	  if [ -f /proc/sys/net/ipv4/ip_forward ]; then
+		if [ `cat /proc/sys/net/ipv4/ip_forward` != 0 ]; then
+			action $"Disabling IPv4 packet forwarding: " sysctl -w net.ipv4.ip_forward=0
+		fi
+	  fi
+	  if [ -f /proc/sys/net/ipv4/ip_always_defrag ]; then
+	        if [ `cat /proc/sys/net/ipv4/ip_always_defrag` != 0 ]; then
+		        action $"Disabling IPv4 automatic defragmentation: " sysctl -w net.ipv4.ip_always_defrag=0
+		fi
+	  fi
+	fi
 
 	# IPv6 hook (post IPv4 stop)
-	if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
-		/etc/sysconfig/network-scripts/init.ipv6-global stop post
+	if [ "$NETWORKING_IPV6" = "yes" ]; then
+		if [ -x /etc/sysconfig/network-scripts/init.ipv6-global ]; then
+			/etc/sysconfig/network-scripts/init.ipv6-global stop post
+		fi
 	fi
 	
         rm -f /var/lock/subsys/network
@@ -232,16 +303,16 @@ case "$1" in
 	echo $"Currently active devices:"
 	echo $(/sbin/ip -o link show up | awk -F ": " '{ print $2 }')
 	;;
-  restart|reload|force-reload)
+  restart|reload)
         cd "$CWD"
+	# uCernVM
 	export STOPSTART=yes
 	$0 stop
 	$0 start
-	rc=$?
 	;;
   *)
-        echo $"Usage: $0 {start|stop|status|restart|reload|force-reload}"
-        exit 2
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
 esac
 
 exit $rc
