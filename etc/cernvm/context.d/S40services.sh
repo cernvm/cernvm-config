@@ -4,7 +4,7 @@
 
 context_start () {
   echo
-  for service in $CERNVM_SERVICES
+  for service in $(echo "$CERNVM_SERVICES" | sed 's/,/ /g')
   do
     service $service start
   done
