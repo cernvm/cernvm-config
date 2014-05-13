@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager \
                  condor ganglia xrootd openldap updatedb screen sssd \
                  localcert gconf selinux xrdp \
-                 shoal rabbitmq system_release ucernvm"  
+                 shoal rabbitmq system_release ucernvm precron"  
 ###########################################################################
 # reset root password
 ###########################################################################
@@ -664,11 +664,11 @@ precron() {
   echo "  --> mlocate"
   /etc/cron.daily/mlocate.cron
   echo "  --> makewhatis"
-  /etc/cron.daily/makewhatis.cron
+  chmod -x /etc/cron.daily/makewhatis.cron
+  /bin/sh /etc/cron.daily/makewhatis.cron
   echo "  --> prelink"
-  /etc/cron.daily/prelink
-  echo "  --> readahead"
-  /etc/cron.daily/readahead.cron
+  chmod -x /etc/cron.daily/prelink
+  /bin/sh /etc/cron.daily/prelink
 }
 
 
