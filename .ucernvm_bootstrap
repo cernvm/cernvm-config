@@ -2,6 +2,10 @@
 
 ROOT_PATH=$1
 
+if [ ! -f ${ROOT_PATH}/etc/resolv.conf ]; then
+  cp /etc/resolv.conf ${ROOT_PATH}/etc/resolv.conf
+fi
+
 if [ ! -d ${ROOT_PATH}/mnt/.rw/afs-cache -a -d ${ROOT_PATH}/usr/vice/cache ]; then
   mv ${ROOT_PATH}/usr/vice/cache ${ROOT_PATH}/mnt/.rw/afs-cache
   ln -s /mnt/.rw/afs-cache ${ROOT_PATH}/usr/vice/cache
