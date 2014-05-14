@@ -17,13 +17,27 @@
 DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager \
                  condor ganglia xrootd openldap updatedb screen sssd \
-                 localcert gconf selinux xrdp \
-                 shoal rabbitmq system_release ucernvm precron"  
+                 localcert gconf selinux xrdp libvirt md \
+                 shoal rabbitmq system_release ucernvm precron iscsi" 
 ###########################################################################
 # reset root password
 ###########################################################################
 reset_root_password() {
   env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+}
+
+md() {
+  chkconfig mdmonitor off
+}
+
+libvirt() {
+  chkconfig libvirtd off
+  chkconfig libvirt-guests off
+}
+
+iscsi() {
+  chkconfig iscsi off
+  chkconfig iscsid off
 }
 
 
@@ -425,6 +439,7 @@ ipv6 () {
 # fix ntpd.conf
 ###########################################################################
 ntp () {
+  chkconfig ntpd on
   if [ `grep -c -e "^OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
   then
     sed -ie 's/\(^OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
@@ -439,6 +454,7 @@ ntp () {
 # Create missing directory
 ###########################################################################
 nfs () {
+  chkconfig nfslock off
   mkdir -p /var/lib/nfs/rpc_pipefs
   chmod 755 /var/lib/nfs/rpc_pipefs
 }
