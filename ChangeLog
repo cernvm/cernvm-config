@@ -1,3 +1,6 @@
+2014-07-14 Jakob Blomer
+M	etc/sysconfig/network
+
 2014-05-23 Jakob Blomer
 A	etc/cernvm/cernvm.d/S05cvmfs-config.sh
 
