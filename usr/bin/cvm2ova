@@ -7,7 +7,9 @@ MEM_SIZE=
 USER_DATA=
 ROOT_KEY=
 CONTEXT_HDD=
+EXTRA_HDD=
 IMAGE=
+ONE_NIC=n
 
 create_context_image() {
   if [ "x${USER_DATA}${ROOT_KEY}" != "x" ]; then
@@ -40,7 +42,7 @@ create_context_image() {
   fi
 }
 
-while getopts n:d:m:i:u:k:h opt; do
+while getopts n:d:m:i:u:k:e:oh opt; do
   case $opt in
     n)
       NAME="$OPTARG"
@@ -62,10 +64,16 @@ while getopts n:d:m:i:u:k:h opt; do
     ;;        
     x)
       X509_CERT="$OPTARG"
-    ;;  
+    ;;
+    e)
+      EXTRA_HDD="$OPTARG"
+    ;;
+    o)
+      ONE_NIC=y
+    ;;
     \?|h)
-      echo "Usage: $0 -n <NAME> -d <SIZE MB> -m <SIZE MB> -i <IMAGE VERSION> [-u <USER DATA>] [-k <ROOT SSH KEY>]"
-      echo "Example: $0 -n MyVM -d 20000 -m 1024 -i ucernvm-devel.1.17-11.cernvm.x86_64.hdd -u user-data.txt -k mykey.pub"
+      echo "Usage: $0 -n <NAME> -d <SIZE MB> -m <SIZE MB> -i <IMAGE FILE> [-u <USER DATA>] [-k <ROOT SSH KEY>] [-e <EXTRA IMAGE>] [-o(ne network card, no host-only)]"
+      echo "Example: $0 -n MyVM -d 20000 -m 1024 -i ucernvm-devel.1.17-11.cernvm.x86_64.hdd -u user-data.txt -k mykey.pub -e extra.hdd"
       exit 0
     ;;  
   esac
@@ -81,14 +89,25 @@ if [ "x$CONTEXT_HDD" != "x" ]; then
   VBoxManage convertfromraw "$CONTEXT_HDD" ${TEMP_DIR}/context.vmdk --format VMDK --variant Stream
   CONTEXT_HDD=${TEMP_DIR}/context.vmdk
 fi
+if [ "x$EXTRA_HDD" != "x" ]; then
+  VBoxManage convertfromraw "$EXTRA_HDD" ${TEMP_DIR}/extra.vmdk --format VMDK --variant Stream
+  EXTRA_HDD=${TEMP_DIR}/extra.vmdk
+fi
 VBoxManage createvm --name "$NAME" --ostype Linux26_64 --register
 VBoxManage storagectl "$NAME" --name SATA --add sata --portcount 4 --hostiocache on --bootable on
-VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --nic2 hostonly --natdnshostresolver1 on --natdnshostresolver2 on --clipboard bidirectional --draganddrop hosttoguest
+HOSTONLY_NIC=
+if [ x"$ONE_NIC" != "xy" ]; then
+  HOSTONLY_NIC="--nic2 hostonly --natdnshostresolver2 on"
+fi
+VBoxManage modifyvm "$NAME" --memory "$MEM_SIZE" --vram 20 --nic1 nat --natdnshostresolver1 on $HOSTONLY_NIC --clipboard bidirectional --draganddrop hosttoguest
 while pgrep VBoxSVC > /dev/null; do true; done
 VBoxManage storageattach "$NAME" --storagectl SATA --port 0 --type hdd --medium ${TEMP_DIR}/boot.vmdk
 VBoxManage storageattach "$NAME" --storagectl SATA --port 1 --type hdd --medium ${TEMP_DIR}/scratch.vmdk
 if [ "x$CONTEXT_HDD" != "x" ]; then  
   VBoxManage storageattach "$NAME" --storagectl SATA --port 2 --type hdd --medium "$CONTEXT_HDD"
+fi
+if [ "x$EXTRA_HDD" != "x" ]; then
+  VBoxManage storageattach "$NAME" --storagectl SATA --port 3 --type hdd --medium "$EXTRA_HDD"
 fi
 VBoxManage export "$NAME" -o "${TEMP_DIR}/${NAME}.ova" --vsys 0 --iso --product "CernVM" --producturl "http://cernvm.cern.ch"
 
