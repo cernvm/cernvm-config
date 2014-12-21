@@ -1,5 +1,6 @@
 2014-12-21 Jakob Blomer
 M	etc/init.d/postinstall
+A	etc/cernvm/cernvm.d/S45docker.sh
 
 2014-11-04 Jakob Blomer
 M	usr/bin/cvm2ova
