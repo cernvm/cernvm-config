@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq tuned sysstat" 
+                 shoal rabbitmq tuned sysstat tex" 
 
 ########################################################################### 
 # Helper
@@ -32,6 +32,14 @@ replace_config() {
     cp "$replacement" "$config_file"
   fi
 }
+
+###########################################################################
+# remove tex installation log
+###########################################################################
+tex() {
+  rm -f /var/lib/texmf/web2c/pdftex/mptopdf.log
+}
+
 
 ###########################################################################
 # reset root password
