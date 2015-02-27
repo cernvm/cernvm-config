@@ -1,0 +1,12 @@
+#%Module 1.0
+#
+#  TeXlive module for use with 'environment-modules' package:
+#  Sets the CernVM default LaTeX
+# 
+
+set texdir /cvmfs/sft.cern.ch/lcg/external/texlive/2014
+set arch   x86_64-linux
+
+prepend-path  PATH             $texdir/bin/$arch
+prepend-path  MANPATH          $texdir/texmf-dist/doc/man
+prepend-path  INFOPATH         $texdir/texmf-dist/doc/info
