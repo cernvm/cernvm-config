@@ -1,3 +1,7 @@
+2015-03-09 Jakob Blomer
+M	etc/cernvm/postinstall
+A	etc/tune-profiles
+
 2015-02-27 Jakob Blomer
 A	usr/share/Modules/modulefiles/texlive/2014
 
