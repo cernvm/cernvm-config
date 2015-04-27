@@ -1,3 +1,6 @@
+2015-04-27 Jakob Blomer
+M	.ucernvm_bootstrap
+
 2015-03-09 Jakob Blomer
 M	etc/cernvm/postinstall
 A	etc/tune-profiles
