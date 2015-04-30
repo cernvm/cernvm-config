@@ -223,6 +223,7 @@ cernvm () {
   /sbin/chkconfig --add cernvm-release
   /sbin/chkconfig --add cernvm-appliance-agent
   /sbin/chkconfig cernvm-appliance-agent reset
+  /sbin/chkconfig cernvm-appliance-agent off
   mkdir -p /mnt/cdrom
 }
 
