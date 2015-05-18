@@ -1,4 +1,5 @@
 2015-05-18 Jakob Blomer
+M	etc/cernvm/cernvm.d/S10vmwaretools.sh
 M	etc/cernvm/cernvm.d/S05cvmfs-config.sh
 
 2015-04-30 Jakob Blomer

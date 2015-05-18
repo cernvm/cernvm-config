@@ -21,7 +21,6 @@ cernvm_start () {
                                 /etc/cernvm/config -x
                             fi;
                             cp /etc/cernvm/vmtools.desktop /etc/xdg/autostart/
-                            echo "modprobe vmblock" >>/etc/rc.modules;
                             echo "modprobe vmhgfs" >>/etc/rc.modules;
                             chmod +x /etc/rc.modules;
                             /sbin/modprobe vmblock >/dev/null 2>&1;
