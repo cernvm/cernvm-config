@@ -1,4 +1,7 @@
 2015-05-18 Jakob Blomer
+A	etc/cvmfs/domain.d/desy.de.conf
+A	etc/cvmfs/keys/desy.de.pub
+A	usr/share/Modules/modulefiles/ROOT/5.34.19
 M	usr/share/Modules/modulefiles/ROOT/5.34.13
 M	etc/cernvm/cernvm.d/S10vmwaretools.sh
 M	etc/cernvm/cernvm.d/S05cvmfs-config.sh
