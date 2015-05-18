@@ -4,12 +4,10 @@
 
 cernvm_start () {
   if [ -d /etc/cvmfs/default.d ]; then
-    cat /dev/null > /etc/cvmfs/default.d/75-cernvm.conf
-    for f in /etc/cernvm/default.conf /etc/cvmfs/site.conf /etc/cernvm/site.conf; do
-      if [ -f $f ]; then
-       cat $f >> /etc/cvmfs/default.d/75-cernvm.conf
-      fi
-    done
+    rm -f /etc/cvmfs/default.d/75-cernvm.conf
+    ln -sf /etc/cernvm/default.conf /etc/cvmfs/default.d/75-cvmdefault.conf
+    ln -sf /etc/cvmfs/site.conf /etc/cvmfs/default.d/76-site.conf
+    ln -sf /etc/cernvm/site.conf /etc/cvmfs/default.d/77-cvmsite.conf
   fi
 }
 
