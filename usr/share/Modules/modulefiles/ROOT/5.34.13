@@ -1,7 +1,7 @@
 #%Module 1.0
 #
 #  ROOT module for use with 'environment-modules' package:
-#  Sets the CernVM default ROOT
+#  Sets the CernVM version of ROOT
 # 
 
 set rootsys   /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/5.34.13/x86_64-slc6-gcc48-opt/root
