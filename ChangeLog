@@ -1,5 +1,5 @@
 2015-05-20 Jakob Blomer
-A	etc/polkit-1/localauthority/50-local.d/cvm-power.pla
+A	etc/polkit-1/localauthority/50-local.d/cvm-power.pkla
 
 2015-05-18 Jakob Blomer
 A	etc/cvmfs/domain.d/desy.de.conf
