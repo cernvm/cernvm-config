@@ -1,3 +1,6 @@
+2015-05-22 Jakob Blomer
+A	etc/cvmfs/default.d/50-cernvm.conf
+
 2015-05-20 Jakob Blomer
 A	etc/polkit-1/localauthority/50-local.d/cvm-power.pkla
 
