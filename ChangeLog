@@ -1,3 +1,6 @@
+2015-05-26 Jakob Blomer
+A	etc/cernvm/cernvm.d/S35swap.sh
+
 2015-05-22 Jakob Blomer
 A	etc/cvmfs/default.d/50-cernvm.conf
 
