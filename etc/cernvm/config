@@ -417,7 +417,7 @@ while getopts ?rhxypuc:d:s:t: opt
                    useradd $user
                    if [  /etc/firstboot -nt /etc/sudoers ] 
                    then
-                       usermod -G wheel $user
+                       usermod -G wheel,docker $user
                        touch /etc/sudoers
                    fi
                  fi
