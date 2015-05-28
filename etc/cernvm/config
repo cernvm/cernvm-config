@@ -10,6 +10,7 @@ setupSwap() {
       fallocate -l "${CERNVM_SWAP_SIZE}" /mnt/.rw/swapfile
       chmod 0600 /mnt/.rw/swapfile
       mkswap /mnt/.rw/swapfile >/dev/null 2>&1
+      swapon /mnt/.rw/swapfile >/dev/null 2>&1
     fi
   fi
 }
