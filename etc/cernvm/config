@@ -1,5 +1,19 @@
 #!/bin/sh
 
+setupSwap() {
+  CERNVM_SWAP_SIZE="$1"
+  if [ ! -f /mnt/.rw/swapfile ]; then
+    if [ "x$CERNVM_SWAP_SIZE" != "x" ]; then
+      if [ "x$CERNVM_SWAP_SIZE" = "xauto" ]; then
+        CERNVM_SWAP_SIZE="$(($(nproc)*2))g"
+      fi
+      fallocate -l "${CERNVM_SWAP_SIZE}" /mnt/.rw/swapfile
+      chmod 0600 /mnt/.rw/swapfile
+      mkswap /mnt/.rw/swapfile >/dev/null 2>&1
+    fi
+  fi
+}
+
 setDefaultRunlevel() {
    sed -i -e "s/id:.:initdefault/id:$1:initdefault:/" /etc/inittab
 }
@@ -297,7 +311,7 @@ config_dir=/etc/cernvm
 config_url=""
 CONFIG_FILES="config default tools domain site machine custom"
 
-while getopts ?rhxypuc:d:s: opt 
+while getopts ?rhxypuc:d:s:t: opt 
      do
           case $opt in
           c)     config_opt=1 
@@ -365,6 +379,8 @@ while getopts ?rhxypuc:d:s: opt
                  config_url=$1
                  shift 1
                  ;;
+          t)     setupSwap "$OPTARG"
+                 ;;
           u)
                  shift $(($OPTIND - 1))                
          	 user=$1
@@ -409,7 +425,7 @@ while getopts ?rhxypuc:d:s: opt
                  then 
                    if [ `groups $user | grep -c ' wheel'` -eq 1 ]
                    then
-                      groups='wheel,users,'
+                      groups='wheel,docker,users,'
                    else
                       groups='users,'
                    fi

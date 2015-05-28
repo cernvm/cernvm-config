@@ -1,3 +1,8 @@
+2015-05-28 Jakob Blomer
+D	etc/cernvm/cernvm.d/S45docker.sh
+M	etc/cernvm/cernvm.d/S35swap.sh
+M	etc/cernvm/config
+
 2015-05-26 Jakob Blomer
 A	etc/cernvm/cernvm.d/S35swap.sh
 
