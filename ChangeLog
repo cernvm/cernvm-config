@@ -1,3 +1,6 @@
+2015-05-29 Jakob Blomer
+M	.ucernvm_pinfiles
+
 2015-05-28 Jakob Blomer
 D	etc/cernvm/cernvm.d/S45docker.sh
 M	etc/cernvm/cernvm.d/S35swap.sh

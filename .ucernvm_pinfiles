@@ -48,6 +48,7 @@
 /etc/services
 /etc/sudo.conf
 /etc/sudoers
+/etc/sudoers.d/10_cernvm-appliance-agent
 /etc/sysconfig/init
 /etc/sysconfig/network
 /etc/sysconfig/network-scripts/ifcfg-eth0
