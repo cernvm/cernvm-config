@@ -31,6 +31,11 @@ cernvm_start () {
                     /sbin/chkconfig --add vboxadd-service
                     /sbin/service vboxadd start
                     /sbin/service vboxadd-service start
+                    # Patch /sbin/VBoxClient for new kernels with new vboxguest kernel module
+                    if [ "x$(/sbin/modinfo vboxguest | grep ^version: | awk '{print $2}')" != "x4.3.4" ]; then
+                      mv /usr/bin/VBoxClient /usr/bin/VBoxClient.bak
+                      ln -s /usr/bin/VBoxClient.4.3.28 /usr/bin/VBoxClient
+                    fi
                     VBoxControl guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
                     if [ $? -eq 0 ]; then
                         echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf;
