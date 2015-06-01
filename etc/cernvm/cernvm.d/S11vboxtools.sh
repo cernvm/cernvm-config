@@ -35,6 +35,8 @@ cernvm_start () {
                     if [ "x$(/sbin/modinfo vboxguest | grep ^version: | awk '{print $2}')" != "x4.3.4" ]; then
                       mv /usr/bin/VBoxClient /usr/bin/VBoxClient.bak
                       ln -s /usr/bin/VBoxClient.4.3.28 /usr/bin/VBoxClient
+                      mv /usr/lib64/VBoxGuestAdditions /usr/lib64/VBoxGuestAdditions.bak
+                      ln -s /usr/lib64/VBoxGuestAdditions.4.3.28 /usr/lib64/VBoxGuestAdditions
                     fi
                     VBoxControl guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
                     if [ $? -eq 0 ]; then
