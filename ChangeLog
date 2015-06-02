@@ -1,3 +1,15 @@
+2015-06-02 Jakob Blomer
+A	etc/cvmfs/config.d/cernvm-slc4.cern.ch.conf
+A	etc/cvmfs/config.d/cernvm-slc5.cern.ch.conf
+A	etc/cvmfs/config.d/cernvm-testing.cern.ch.conf
+A	etc/cvmfs/config.d/cernvm-devel.cern.ch.conf
+A	etc/cvmfs/config.d/cernvm-sl7.cern.ch.conf
+A	etc/cvmfs/keys/cernvm/cernvm-slc4.cern.ch.pub
+A	etc/cvmfs/keys/cernvm/cernvm-slc5.cern.ch.pub
+A	etc/cvmfs/keys/cernvm/cernvm-testing.cern.ch.pub
+A	etc/cvmfs/keys/cernvm/cernvm-devel.cern.ch.pub
+A	etc/cvmfs/config.d/cernvm-sl7.cern.ch.pub
+
 2015-05-29 Jakob Blomer
 M	.ucernvm_pinfiles
 
