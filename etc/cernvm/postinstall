@@ -31,6 +31,10 @@ udev() {
     mv /etc/udev/rules.d/40-multipath.rules /etc/udev/rules.d/40-multipath.rules.bak
     cp /etc/udev/rules.d/40-multipath.rules.cernvm /etc/udev/rules.d/40-multipath.rules
   fi
+  if ! diff -q /etc/udev/rules.d/50-udev.rules /etc/udev/rules.d/50-udev.rules.cernvm > /dev/null
+    mv /etc/udev/rules.d/50-udev.rules /etc/udev/rules.d/50-udev.rules.bak
+    cp /etc/udev/rules.d/50-udev.rules.cernvm /etc/udev/rules.d/50-udev.rules
+  fi
 }
 
 syslog() {
