@@ -275,6 +275,11 @@ network_manager () {
 ganglia () {
   /sbin/chkconfig gmond off
   /sbin/chkconfig gmetad off
+  for f in /etc/httpd/conf.d/ganglia.conf /etc/httpd/conf.d/ganglia-web.conf; do
+    if [ -f $f ]; then
+      mv $f ${f}.disabled
+    fi
+  done
 }
 
 
