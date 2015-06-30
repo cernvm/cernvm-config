@@ -1,3 +1,6 @@
+2015-06-30 Jakob Blomer
+M	/.ucernvm_bootstrap
+
 2015-06-02 Jakob Blomer
 A	etc/cvmfs/config.d/cernvm-slc4.cern.ch.conf
 A	etc/cvmfs/config.d/cernvm-slc5.cern.ch.conf
