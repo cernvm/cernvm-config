@@ -1,8 +1,4 @@
 # Created by uCernVM
-aufs		/		aufs	dirs=/mnt/.rw=rw:/mnt/.ro=ro	
-tmpfs           /dev/shm        tmpfs   defaults                0 0
-devpts		/dev/pts	devpts	gid=5,mode=620		0 0
 proc		/proc		proc	defaults		0 0	
-sysfs           /sys            sysfs   defaults                0 0
 /mnt/.rw/cvmfs	/cvmfs		none    bind			0 0
 /dev/cdrom	/mnt/cdrom	auto	user,noauto,ro,owner,exec	0 0
