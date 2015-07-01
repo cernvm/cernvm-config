@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python2
 
 # Script to set the resolution in xorg.conf
 # takes one input var
