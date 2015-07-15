@@ -47,6 +47,7 @@ glideinwms() {
     useradd -u 313 -g 313 -d /home/glidein_pilot -s /bin/nologin glidein_pilot
     passwd -l glidein_pilot
   fi
+  /sbin/chkconfig glideinwms-pilot off
 }
 
 
