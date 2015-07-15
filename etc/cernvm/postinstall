@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq tuned sysstat tex" 
+                 shoal rabbitmq tuned sysstat tex glideinwms" 
 
 ########################################################################### 
 # Helper
@@ -32,6 +32,23 @@ replace_config() {
     cp "$replacement" "$config_file"
   fi
 }
+
+
+###########################################################################
+# Adjust glideinwms user settings
+###########################################################################
+glideinwms() {
+  local pilot_uid=$(uid -u glidein_pilot 2>/dev/null)
+  if [ "x$pilot_uid" != "x" -a "x$pilot_uid" != "x313" ]; then
+    userdel glidein_pilot
+    groupdel glidein_pilot
+    groupadd -g 313 glidein_pilot
+    chown -R 313:313 /home/glidein_pilot /var/log/glideinwms-pilot
+    useradd -u 313 -g 313 -d /home/glidein_pilot -s /bin/nologin glidein_pilot
+    passwd -l glidein_pilot
+  fi
+}
+
 
 ###########################################################################
 # remove tex installation log
