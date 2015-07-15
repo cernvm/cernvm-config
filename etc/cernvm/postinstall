@@ -38,7 +38,7 @@ replace_config() {
 # Adjust glideinwms user settings
 ###########################################################################
 glideinwms() {
-  local pilot_uid=$(uid -u glidein_pilot 2>/dev/null)
+  local pilot_uid=$(id -u glidein_pilot 2>/dev/null)
   if [ "x$pilot_uid" != "x" -a "x$pilot_uid" != "x313" ]; then
     userdel glidein_pilot
     groupdel glidein_pilot
