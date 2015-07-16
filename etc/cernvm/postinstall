@@ -44,7 +44,7 @@ glideinwms() {
     groupdel glidein_pilot
     groupadd -g 313 glidein_pilot
     chown -R 313:313 /home/glidein_pilot /var/log/glideinwms-pilot
-    useradd -u 313 -g 313 -d /home/glidein_pilot -s /bin/nologin glidein_pilot
+    useradd -u 313 -g 313 -d /home/glidein_pilot -s /sbin/nologin glidein_pilot
     passwd -l glidein_pilot
   fi
   /sbin/chkconfig glideinwms-pilot off
