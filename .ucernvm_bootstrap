@@ -29,9 +29,11 @@ if [ -f /user-data ]; then
     cp /user-data ${ROOT_PATH}/tmp/glideinwms-user-data
     sed -i -e 's,\(^glidein_pilot:.*:\)/sbin/nologin$,\1/bin/bash,' ${ROOT_PATH}/etc/passwd
     for runlevel in 2 3 4 5; do
+      rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
       ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
     done
     for runlevel in 0 1 6; do
+      rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
       ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
     done
     log_ok
