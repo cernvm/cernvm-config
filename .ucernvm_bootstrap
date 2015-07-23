@@ -19,6 +19,10 @@ if [ "x$UCONTEXT_SRC" = "xCloudStack" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, CloudStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_cloudstack.cfg
 fi
 
+if [ "x$UCONTEXT_SRC" = "xAzure" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Azure/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_azure.cfg
+fi
+
 if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
   mv ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf.disabled ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf
 fi
