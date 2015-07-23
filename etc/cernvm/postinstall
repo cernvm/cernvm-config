@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq tuned sysstat tex glideinwms" 
+                 shoal rabbitmq tuned sysstat tex glideinwms waagent" 
 
 ########################################################################### 
 # Helper
@@ -31,6 +31,15 @@ replace_config() {
     mv "$config_file" "${config_file}.bak"
     cp "$replacement" "$config_file"
   fi
+}
+
+
+###########################################################################
+# Turn off waagent
+###########################################################################
+waagent() {
+  /sbin/chkconfig walinuxagent --add
+  /sbin/chkconfig walinuxagent off
 }
 
 

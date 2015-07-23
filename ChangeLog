@@ -1,5 +1,6 @@
 2015-07-23 Jakob Blomer
 M	.ucernvm_bootstrap
+M	etc/cernvm/postinstall
 
 2015-07-16 Jakob Blomer
 M	etc/cernvm/postinstall
