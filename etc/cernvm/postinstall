@@ -18,7 +18,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq tuned sysstat tex glideinwms waagent" 
+                 shoal rabbitmq tuned sysstat tex glideinwms waagent default_java" 
 
 ########################################################################### 
 # Helper
@@ -31,6 +31,13 @@ replace_config() {
     mv "$config_file" "${config_file}.bak"
     cp "$replacement" "$config_file"
   fi
+}
+
+###########################################################################
+# Set default java to 1.6.0
+###########################################################################
+default_java() {
+  update-alternatives --set java /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/bin/java
 }
 
 
