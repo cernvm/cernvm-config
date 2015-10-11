@@ -556,7 +556,7 @@ xfce4 () {
 
   
 custom_configs() {
-  replace_config /etc/sysconfig/mandb /etc/sysconfig/mandb.cernvm
+  replace_config /etc/sysconfig/man-db /etc/sysconfig/man-db.cernvm
 }
 
 precron() {
@@ -573,7 +573,7 @@ precron() {
   echo "  --> ghc-doc-index"
   /bin/sh /etc/cron.hourly/ghc-doc-index
   echo "  --> mlocate"
-  /etc/cron.daily/mlocate
+  /bin/sh /etc/cron.daily/mlocate
   echo "  --> prelink"
   /bin/sh /etc/cron.daily/prelink
 }
