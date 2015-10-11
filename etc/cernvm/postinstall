@@ -14,7 +14,8 @@
 # 11-Oct-2015
 #C<
 ###########################################################################
-DEFAULT_ACTIONS="custom_configs precron" 
+DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
+ tuned gconf context cvmfs cernvm localcert timezone" 
 
 ########################################################################### 
 # Helper
@@ -31,61 +32,26 @@ replace_config() {
 }
 
 
-
 ###########################################################################
 # tasks
 ###########################################################################
 
-tex() {
-  rm -f /var/lib/texmf/web2c/pdftex/mptopdf.log
+disable_services() {
+  systemctl disable ksm
+  systemctl disable rabbitmq_server
+  systemctl disable sssd
+  systemctl disable sysstat
+  systemctl disable xrdp
 }
 
-
-###########################################################################
-# reset root password
-###########################################################################
-reset_root_password() {
-  env LC_ALL=C perl -e 'my @salt=("a".."z","A".."Z",0..9,".","/");my $pass="";map { $pass=$pass . sprintf("%c",int(rand(93))+33) } (1..8); my $unx=crypt($pass,$salt[int(rand($#salt + 1))] . $salt[int(rand($#salt + 1))]);print "$unx\n$unx\n";' | passwd --stdin root
+enable_services() {
+  systemctl enable ntpd
 }
 
-
-###########################################################################
-# turn off sysstat
-###########################################################################
-sysstat() {
-  chkconfig sysstat off
-}
-
-
-###########################################################################
-# turn off tuned
-###########################################################################
 tuned() {
-  chkconfig ktune on
-  chkconfig tuned off
   /usr/sbin/tuned-adm profile cernvm
 }
 
-
-###########################################################################
-# turn off rabbitmq
-###########################################################################
-rabbitmq() {
-  chkconfig rabbitmq-server off
-}
-
-
-###########################################################################
-# turn off shoal
-###########################################################################
-shoal() {
-  :
-}
-
-
-###########################################################################
-# turn off afs
-###########################################################################
 afs() {
   echo "cern.ch" > /usr/vice/etc/ThisCell
   chkconfig openafs-client off
@@ -96,100 +62,16 @@ afs() {
   rmdir /afs
 }
 
-
-###########################################################################
-# turn off sssd
-###########################################################################
-sssd() {
-  chkconfig sssd off
-}
-
-
-###########################################################################
-# turn off xrdp
-###########################################################################
 xrdp() {
   replace_config /etc/xrdp/startwm.sh /etc/xrdp/startwm.sh.cernvm
-  chkconfig xrdp off
 }
 
-
-###########################################################################
-# gconf defaults
-###########################################################################
 gconf() {
   gconftool-2 --direct --config-source xml:readwrite:/etc/gconf/gconf.xml.defaults \
     /apps/procman/show_all_fs --type bool --set true
 }
 
-
-###########################################################################
-# screen permissions
-###########################################################################
-screen() {
-  chmod 1777 /var/run/screen
-}
-
-
-###########################################################################
-# remove /cvmfs, /mnt from updatedb
-###########################################################################
-updatedb() {
-  replace_config /etc/updatedb.conf /etc/updatedb.conf.cernvm
-}
-
-
-###########################################################################
-# disable selinux
-###########################################################################
-selinux() {
-  replace_config /etc/selinux/config /etc/selinux/config.cernvm 
-}
-
-
-###########################################################################
-# Reduce number of ttys
-###########################################################################
-ttyinit() {
-  replace_config /etc/sysconfig/init /etc/sysconfig/init.cernvm
-}
-
-
-###########################################################################
-# TODO create an entry in inittab to allow console login
-###########################################################################
-xen_xvc0 () {
-  if [ -c /dev/xvc0 ]
-  then
-     if [ `grep -c xvc0 /etc/inittab` -eq 0 ]
-     then
-        echo "co:2345:respawn:/sbin/mingetty xvc0" >> /etc/inittab
-        eval `/sbin/grubby --info=$kernel`
-        /sbin/grubby  --args="$args console=xvc0" --update-kernel=$kernel
-     fi
-     if [ `grep -c xvc0 /etc/securetty` -eq 0 ]
-     then
-        echo "xvc0" >> /etc/securetty
-     fi
-  fi
-}
-
-###########################################################################
-# DONE BY setup (ksh, csh missing) set default /etc/shells
-###########################################################################
-shells () {
-  for shell in /bin/sh /bin/bash /bin/csh /bin/tcsh /bin/ksh /sbin/nologin
-  do
-     if [ -f $shell ]
-     then
-        echo $shell
-     fi
-  done > /etc/shells
-}
-
-###########################################################################
-# Add context option to inittab / login
-###########################################################################
+# Add cernvm online context option to login
 context () {
   if [ -f /usr/sbin/cernvm-online-login.sh -a -f /lib64/security/pam_cernvm.so ]
   then
@@ -201,52 +83,26 @@ context () {
   [ ! -f /bin/sh.before ] && ln -s sh /bin/sh.before || true
 }
 
-
-###########################################################################
-# Initial cvmfs config
-###########################################################################
-cvmfs () {
+cvmfs() {
   /usr/bin/cvmfs_config setup
 }
 
-
-###########################################################################
-# Setup CernVM services
-###########################################################################
 cernvm () {
-  /sbin/chkconfig --add cernvm
-  /sbin/chkconfig --add cernvm-context
-  /sbin/chkconfig --add amiconfig-cernvm
-  /sbin/chkconfig --add vmcontext_hepix
-  /sbin/chkconfig --add vmcontext_prolog
-  /sbin/chkconfig --add vmcontext_epilog
-  /sbin/chkconfig --add cernvm-release
-  /sbin/chkconfig --add cernvm-appliance-agent
-  /sbin/chkconfig cernvm-appliance-agent reset
-  /sbin/chkconfig cernvm-appliance-agent off
+  # /sbin/chkconfig --add cernvm
+  # /sbin/chkconfig --add cernvm-context
+  # /sbin/chkconfig --add amiconfig-cernvm
+  # /sbin/chkconfig --add vmcontext_hepix
+  # /sbin/chkconfig --add vmcontext_prolog
+  # /sbin/chkconfig --add vmcontext_epilog
+  # /sbin/chkconfig --add cernvm-release
   mkdir -p /mnt/cdrom
 }
 
-
-###########################################################################
 # Remove localhost certificate / key (recreated on first boot)
-###########################################################################
-localcert () {
+localcert() {
   rm -f /etc/pki/tls/certs/localhost.crt
   rm -f /etc/pki/tls/private/localhost.key
 }
-
-
-###########################################################################
-# Add user for cernvm appliance agent
-###########################################################################
-cernvm_appliance_agent () {
-  if ! /usr/bin/getent passwd cernvm-appliance-agent > /dev/null; then 
-    /usr/sbin/useradd -r cernvm-appliance-agent
-    chmod -R cernvm-appliance-agent /etc/cernvm-appliance-agent
-  fi
-}
-
 
 
 ###########################################################################
@@ -259,135 +115,6 @@ cloud_init () {
   /sbin/chkconfig cloud-final on
 }
 
-
-###########################################################################
-# Turn off network_manager
-# Disturbs cvmfs started in init ram disk (disconnecting network?)
-###########################################################################
-network_manager () {
-  /sbin/chkconfig NetworkManager off
-}
-
-
-###########################################################################
-# Turn off ganglia service
-###########################################################################
-ganglia () {
-  /sbin/chkconfig gmond off
-  /sbin/chkconfig gmetad off
-}
-
-
-###########################################################################
-# Turn off openldap service
-###########################################################################
-openldap () {
-  /sbin/chkconfig slapd off
-}
-
-
-###########################################################################
-# Turn off condor service
-###########################################################################
-condor () {
-  /sbin/chkconfig condor off
-}
-
-
-###########################################################################
-# Turn off xrootd services
-###########################################################################
-xrootd () {
-  /sbin/chkconfig xrootd off
-  /sbin/chkconfig frm_xfrd off
-  /sbin/chkconfig frm_purged off
-  /sbin/chkconfig cmsd off
-  /sbin/chkconfig eosd off
-}
-
-
-###########################################################################
-# Fixes for network and halt scripts
-###########################################################################
-ucernvm () {
-  replace_config /etc/init.d/halt /etc/init.d/halt.ucernvm
-  replace_config /etc/init.d/network /etc/init.d/network.ucernvm
-}
-
-
-###########################################################################
-# fix kerberos config files 
-###########################################################################
-krb () {
-  local file
-  local cfile
-  for file in `ls /etc/krb*.cernvm 2> /dev/null`
-  do
-    cd /etc
-    cfile=`basename $file .cernvm`
-    if [ -f $cfile ]; then
-      if ! diff -q $file $cfile > /dev/null; then
-        mv $cfile $cfile.bak
-        cp $file $cfile
-      fi
-    else
-      cp $file $cfile  
-    fi
-  done
-}
-
-
-###########################################################################
-# remove initial dns config
-###########################################################################
-dns () {
-   if [ -f /etc/resolv.conf.predhclient  ]
-   then
-     rm -f /etc/resolv.conf.predhclient 
-   fi
-}
-
-
-###########################################################################
-# DONT Disable ipv6
-###########################################################################
-ipv6 () {
-  if [ -f /etc/modprobe.conf ]
-  then 
-    if  [ `grep -c "alias ipv6 off" /etc/modprobe.conf` -eq 0  ]
-    then
-       echo "alias ipv6 off" >>  /etc/modprobe.conf
-    fi
-    if  [ `grep -c "alias net-pf-10 off" /etc/modprobe.conf` -eq 0  ]
-    then
-       echo "alias net-pf-10 off" >>  /etc/modprobe.conf
-    fi
-  fi
-}
-
-###########################################################################
-# fix ntpd.conf
-###########################################################################
-ntp () {
-  if [ `grep -c -e "^OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
-  then
-    sed -ie 's/\(^OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
-  fi 
-  if [ `grep -c -e "^NTPDATE_OPTIONS=.*-4" /etc/sysconfig/ntpd` -eq 0 ]
-  then
-    sed -ie 's/\(^NTPDATE_OPTIONS\)="\(.*\)"/\1="\2 -4"/' /etc/sysconfig/ntpd
-  fi
-  chkconfig ntpd on 
-}
-
-###########################################################################
-# Create missing directory
-###########################################################################
-nfs () {
-  mkdir -p /var/lib/nfs/rpc_pipefs
-  chmod 755 /var/lib/nfs/rpc_pipefs
-  replace_config /etc/sysconfig/nfs /etc/sysconfig/nfs.cernvm
-}
 
 ###########################################################################
 # allow ssh key injection only once appliance is configured
@@ -420,115 +147,10 @@ ssh () {
 }
 
 ###########################################################################
-# Fix timeout and /etc/auto.master
-###########################################################################
-autofs () {
-  if [ -f /etc/sysconfig/autofs ]
-  then
-    sed -i 's/^TIMEOUT=300/TIMEOUT=86400/' /etc/sysconfig/autofs
-    chmod 0755 /bin/fusermount
-    chmod u+s /bin/fusermount
-  fi
-}
-
-###########################################################################
 # Fix timeozone
 ###########################################################################
 timezone() {
-  for dir in /usr/share/zoneinfo /usr/share/zoneinfo/posix
-  do
-     ln -sf $dir/GMT /etc/localtime
-  done
-}
-
-
-###########################################################################
-# show URL in GDM greeter screen.
-###########################################################################
-greeter () {
-  local issue
-  local file
-  issue=`grep "Web management console" /etc/issue | awk -F"https:" '{printf("Web management console: https:%s",$2)}'` 
-  if [ -d /etc/gdm ]
-  then
-     if [ ! -f /etc/gdm/gdm.conf -a -f /etc/X11/gdm/gdm.conf.cernvm ]
-     then
-        cp /etc/X11/gdm/gdm.conf.cernvm /etc/gdm/gdm.conf
-     fi 
-  fi
-  for file in /etc/X11/gdm/gdm.conf  /etc/gdm/gdm.conf
-  do  
-    if [ -f $file ] 
-    then
-      if [ -f /usr/share/gdm/themes/cernvm/cernvm.xml ]
-      then
-        sed -i "s%GraphicalTheme=.*%GraphicalTheme=cernvm%" $file
-        sed -i "s%Web management console:.*% $issue%" /usr/share/gdm/themes/cernvm/cernvm.xml
-      else
-        sed -i "s%#InfoMsgFile=%InfoMsgFile=/etc/issue%" $file
-      fi
-    fi
-  done
-}
-
-###########################################################################
-# fixes for Gnome on RH
-###########################################################################
-gnome () {
-  if [ -d /etc/gtk-2.0/${arch}-redhat-linux-gnu ]
-  then
-    if [ ! -s /etc/gtk-2.0/${arch}-redhat-linux-gnu/gdk-pixbuf.loaders ]
-    then
-      if [ -x /usr/bin/update-gdk-pixbuf-loaders ] 
-      then
-         /usr/bin/update-gdk-pixbuf-loaders ${arch}-redhat-linux-gnu
-      fi
-    fi
-    if [ ! -s /etc/gtk-2.0/${arch}-redhat-linux-gnu/gtk.immodules ]
-    then
-      if [ -x /usr/bin/update-gtk-immodules ] 
-      then
-         /usr/bin/update-gtk-immodules ${arch}-redhat-linux-gnu
-      fi
-    fi
-  fi
-
-  if [  -d  /etc/pango/${arch}-redhat-linux-gnu -a \
-      ! -s  /etc/pango/${arch}-redhat-linux-gnu/pango.modules ] 
-  then
-    case "$arch" in
-      x86_64*)
-        /usr/bin/pango-querymodules-64 > /etc/pango/${arch}-redhat-linux-gnu/pango.modules 
-       ;;
-       *)
-        /usr/bin/pango-querymodules-32 > /etc/pango/${arch}-redhat-linux-gnu/pango.modules 
-       ;;
-    esac
-  fi
- 
-  if [ -x /usr/X11R6/bin/X -o -x /usr/bin/X ]
-  then
-     mkdir -p /usr/share/icons/hicolor
-     if [ -x /usr/bin/gtk-update-icon-cache ]
-     then
-       gtk-update-icon-cache -q /usr/share/icons/hicolor
-     fi
-  fi
-}
-
-###########################################################################
-#  fix X11 directories
-###########################################################################
-x11dirs () {
-    [ ! -d /etc/dbus-1/session.d ] && mkdir -p /etc/dbus-1/session.d 
-    [ ! -d /var/lib/xkb ] && mkdir -p /var/lib/xkb
-    if [ -d /usr/X11R6/lib64 ]
-    then
-       if [ ! -d /usr/X11R6/lib64/X11/fonts ]
-       then
-         ln -sf /usr/X11R6/lib/X11/fonts /usr/X11R6/lib64/X11/fonts
-       fi
-    fi 
+  ln -sf /usr/share/zoneinfo/posix/GMT /etc/localtime
 }
 
 
@@ -556,11 +178,18 @@ xfce4 () {
 
   
 custom_configs() {
+  replace_config /etc/init.d/network /etc/init.d/network.ucernvm
+  replace_config /etc/krb5.conf /etc/krb5.conf.cernvm
+  replace_config /etc/lxdm/lxdm.conf /etc/lxdm/lxdm.conf.cernvm
+  replace_config /etc/selinux/config /etc/selinux/config.cernvm
+  replace_config /etc/sysconfig/autofs /etc/sysconfig/autofs.cernvm
   replace_config /etc/sysconfig/man-db /etc/sysconfig/man-db.cernvm
+  replace_config /etc/updatedb.conf /etc/updatedb.conf.cernvm
 }
 
 precron() {
   for job in \
+      cron.d/sysstat \
       cron.daily/0logwatch \
       cron.daily/0yum-daily.cron \
       cron.daily/mlocate \
@@ -578,20 +207,6 @@ precron() {
   /bin/sh /etc/cron.daily/prelink
 }
 
-
-###########################################################################
-#  define eth0 on Xen kernels
-###########################################################################
-xen_eth0 () {
-  mkdir -p /etc/sysconfig/network-scripts
-  cat <<EOF>/etc/sysconfig/network-scripts/ifcfg-eth0
-DEVICE=eth0
-BOOTPROTO=dhcp
-ONBOOT=yes
-TYPE=Ethernet
-EOF
-  chmod 644 /etc/sysconfig/network-scripts/ifcfg-eth0
-}
 
 
 ###########################################################################
