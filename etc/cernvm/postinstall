@@ -45,6 +45,7 @@ disable_services() {
 }
 
 enable_services() {
+  systemctl enable cernvm-release
   systemctl enable ntpd
 }
 
