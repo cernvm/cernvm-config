@@ -1,0 +1,2 @@
+DISPLAYMANAGER=/usr/sbin/lxdm
+export PREFERRED=/usr/sbin/lxdm

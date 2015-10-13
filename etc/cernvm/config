@@ -1,13 +1,13 @@
 #!/bin/sh
 
 setupSwap() {
-  CERNVM_SWAP_SIZE="$1"
+  local swap_size="$1"
   if [ ! -f /mnt/.rw/swapfile ]; then
-    if [ "x$CERNVM_SWAP_SIZE" != "x" ]; then
-      if [ "x$CERNVM_SWAP_SIZE" = "xauto" ]; then
-        CERNVM_SWAP_SIZE="$(($(nproc)*2))g"
+    if [ "x$swap_size" != "x" ]; then
+      if [ "x$swap_size" = "xauto" ]; then
+        swap_size="$(($(nproc)*2))g"
       fi
-      fallocate -l "${CERNVM_SWAP_SIZE}" /mnt/.rw/swapfile
+      fallocate -l "${swap_size}" /mnt/.rw/swapfile
       chmod 0600 /mnt/.rw/swapfile
       mkswap /mnt/.rw/swapfile >/dev/null 2>&1
       swapon /mnt/.rw/swapfile >/dev/null 2>&1
@@ -15,10 +15,18 @@ setupSwap() {
   fi
 }
 
-setDefaultRunlevel() {
-   sed -i -e "s/id:.:initdefault/id:$1:initdefault:/" /etc/inittab
+
+setGuiBoot() {
+  systemctl set-default graphical.target
 }
 
+
+setConsoleBoot() {
+  systemctl set-default multi-user.target
+}
+
+
+# TODO: lxdm
 switchAutoLogin() {
   local how=$1
 
@@ -37,6 +45,7 @@ switchAutoLogin() {
   return 0
 }
 
+
 getConfig() {
   local cfg=$1
   local url=$2
@@ -50,6 +59,7 @@ getConfig() {
      return 0
   fi
 
+  # TODO: get the proxy from micro
   if [ "x$CVMFS_HTTP_PROXY" != "x" -a      \
        "x$CVMFS_HTTP_PROXY" != "xDIRECT" ] 
   then  
@@ -61,19 +71,6 @@ getConfig() {
     fi
   fi
   
-  if [ -d /etc/cernvm/proxies ]
-  then
-     for file in `find /etc/cernvm/proxies -type f -print`
-     do
-        http_proxy=`grep -e "^proxy.*http:" $file| cut -f3`
-        env http_proxy="$http_proxy" curl --connect-timeout 10 -4 -s -o $cfg -i "$url"
-        if [ $? -eq 0 ]
-        then
-           return 0 
-        fi
-     done 
-  fi
-
   return 1
 }
 
@@ -104,7 +101,8 @@ verifyConfig() {
   return $result
 }
 
-create_desktop_icons() {
+
+createDesktopIcons() {
   for file in $CONFIG_FILES
     do
     if [ -e /etc/cernvm/$file.conf ]
@@ -124,7 +122,7 @@ create_desktop_icons() {
 }
 
 
-customize_desktop() {
+customizeDesktop() {
     #This function will do the following only if CERNVM_EDITION is Desktop
     #  1. change Resolution by patching /etc/x11/xorg.conf
     #  2. if CERNVM_START_XDM is:
@@ -141,40 +139,31 @@ customize_desktop() {
       fi
     done
 
-    if [ x$CERNVM_EDITION == "xDesktop" ]
-	then
-	if [ x$CERNVM_SCREEN_RES != "x" ]
-	    then
-	    /usr/bin/env python /etc/cernvm/setres.py $CERNVM_SCREEN_RES
-	fi
-	if [ x$CERNVM_START_XDM == "xon" ]
-	then
-	    [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm on
-            setDefaultRunlevel 5
-	fi
-	if [ x$CERNVM_START_XDM == "xoff" ]
-	then
-	    [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm off
-            setDefaultRunlevel 3
-	fi
-	if [ x$CERNVM_KEYBOARD != "x" -a -x /usr/bin/system-config-keyboard ]
-	    then
-	    /usr/bin/system-config-keyboard --noui $CERNVM_KEYBOARD > /dev/null 2>&1
-	fi
-	if [ "x$CERNVM_AUTOLOGIN" == "xon" -o "x$CERNVM_AUTOLOGIN" == "xoff" ]
-        then
-          switchAutoLogin $CERNVM_AUTOLOGIN
-        fi
-    else 
-	# when not in desktop mode , turn off xdm
-        [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm off
-        setDefaultRunlevel 3
-    fi
+   if [ x$CERNVM_EDITION == "xDesktop" ]
+   then
+      if [ x$CERNVM_START_XDM == "xon" ]
+      then
+        setGuiBoot
+      fi
+      if [ x$CERNVM_START_XDM == "xoff" ]
+         setConsoleBoot 3
+      fi
+      if [ x$CERNVM_KEYBOARD != "x" -a -x /usr/bin/system-config-keyboard ]
+      then
+         /usr/bin/system-config-keyboard --noui $CERNVM_KEYBOARD > /dev/null 2>&1
+      fi
+      if [ "x$CERNVM_AUTOLOGIN" == "xon" -o "x$CERNVM_AUTOLOGIN" == "xoff" ]
+      then
+         switchAutoLogin $CERNVM_AUTOLOGIN
+      fi
+   else 
+      # when not in desktop mode , turn off xdm
+      setConsoleBoot
+   fi
 }
 
 
 cernvm_config () {
-
   for file in $CONFIG_FILES
   do
     if [ -r /etc/cernvm/$file.conf ]
@@ -323,12 +312,8 @@ while getopts ?rhxypuc:d:s:t: opt
 
                  mkdir -p $config_dir || exit 1
 
-                 if [ -f /usr/sbin/gdm ]
-                 then
-                    CERNVM_EDITION="Desktop"
-                 else
-                    CERNVM_EDITION="Basic"
-                 fi
+                 # At some point in the future there might be editions again
+		 CERNVM_EDITION="Desktop"
 
     	         CERNVM_START_XDM="xoff"
     	         CERNVM_CVMFS2="on"
@@ -352,23 +337,13 @@ while getopts ?rhxypuc:d:s:t: opt
 
                  cernvm_config
 
-                 case x$CERNVM_EDITION in
-                    xBasic)
-                      :
-                      ;;
-                    xDesktop)
-                      :
-                      ;;
-                    *)
-                      ;;
-                 esac
                  exit 0
                  ;;
           d)     config_dir="$OPTARG"
                  ;;
-          x)     customize_desktop
+          x)     customizeDesktop
                  ;;
-          y)     create_desktop_icons
+          y)     createDesktopIcons
                  ;;
           g)     exit 0
                  ;;

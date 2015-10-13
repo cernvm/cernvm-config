@@ -15,7 +15,7 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cernvm localcert timezone ssh" 
+ tuned gconf context cvmfs cdrom runlevel localcert timezone ssh" 
 
 ########################################################################### 
 # Helper
@@ -88,7 +88,17 @@ cvmfs() {
   /usr/bin/cvmfs_config setup
 }
 
-cernvm () {
+cdrom() {
+  mkdir -p /mnt/cdrom
+}
+
+runlevel() {
+  systemctl reenable lxdm.service
+  systemctl set-default multi-user.target
+}
+
+cernvm() {
+  :
   # /sbin/chkconfig --add cernvm
   # /sbin/chkconfig --add cernvm-context
   # /sbin/chkconfig --add amiconfig-cernvm
@@ -96,7 +106,6 @@ cernvm () {
   # /sbin/chkconfig --add vmcontext_prolog
   # /sbin/chkconfig --add vmcontext_epilog
   # /sbin/chkconfig --add cernvm-release
-  mkdir -p /mnt/cdrom
 }
 
 # Remove localhost certificate / key (recreated on first boot)
