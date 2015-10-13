@@ -15,7 +15,7 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cernvm localcert timezone" 
+ tuned gconf context cvmfs cernvm localcert timezone ssh" 
 
 ########################################################################### 
 # Helper
@@ -117,33 +117,12 @@ cloud_init () {
 }
 
 
-###########################################################################
-# allow ssh key injection only once appliance is configured
-###########################################################################
+# Allow ssh key injection
 ssh () {
-  local file
-  local cfile
-  for file in `ls /etc/ssh/sshd_config.cernvm /etc/ssh/ssh_config.cernvm 2> /dev/null`
-  do
-    cd /etc/ssh
-    cfile=`basename $file .cernvm`
-    if [ -f $cfile ]; then
-      if ! diff -q $file $cfile > /dev/null; then
-        mv $cfile $cfile.bak
-        cp -f $file $cfile  
-      fi
-    else
-      cp -f $file $cfile  
-    fi
-  done
-
-  if [ -f /etc/cernvm/site.conf ]
-  then  
-    if [ ! -d /root/.ssh ] 
-    then
-      mkdir -p /root/.ssh
-      chmod 600 /root/.ssh
-    fi
+  if [ ! -d /root/.ssh ] 
+  then
+    mkdir -p /root/.ssh
+    chmod 600 /root/.ssh
   fi
 }
 
