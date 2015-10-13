@@ -183,6 +183,8 @@ custom_configs() {
   replace_config /etc/krb5.conf /etc/krb5.conf.cernvm
   replace_config /etc/lxdm/lxdm.conf /etc/lxdm/lxdm.conf.cernvm
   replace_config /etc/selinux/config /etc/selinux/config.cernvm
+  replace_config /etc/ssh/ssh_config /etc/ssh/ssh_config.cernvm
+  replace_config /etc/ssh/sshd_config /etc/ssh/sshd_config.cernvm
   replace_config /etc/sysconfig/autofs /etc/sysconfig/autofs.cernvm
   replace_config /etc/sysconfig/man-db /etc/sysconfig/man-db.cernvm
   replace_config /etc/updatedb.conf /etc/updatedb.conf.cernvm
