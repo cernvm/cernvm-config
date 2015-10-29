@@ -161,7 +161,7 @@ gconf() {
 # screen permissions
 ###########################################################################
 screen() {
-  chmod 1777 /var/run/screen
+  chmod 1775 /var/run/screen
 }
 
 
