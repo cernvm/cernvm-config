@@ -212,12 +212,7 @@ cernvm_config () {
     uuid="&uuid=${CERNVM_UUID}"
   fi
 
-  if [ -x /usr/bin/cvmfs2 ]
-  then
-    cvmfs_version="&cvmfs_version=$(/usr/bin/cvmfs2 --version 2>&1 | awk '{print $3}')"
-  else
-    cvmfs_version=""
-  fi
+  cvmfs_version="&cvmfs_version=$(/usr/bin/cvmfs2 --version 2>&1 | awk '{print $3}')"
 
   touch /etc/cernvm/default.conf > /dev/null 2>&1 || exit 1
 
@@ -262,7 +257,7 @@ cernvm_config () {
 
   if [ -s /etc/cernvm/default.conf ]
   then
-      eval `cat /etc/cernvm/default.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
+    read_conf /etc/cernvm/default.conf    
   fi
 
   if [ "x$CERNVM_TZONE" != "x" ]
@@ -277,21 +272,14 @@ cernvm_config () {
      done
   fi
  
-  if [ "x$CERNVM_CONFIG_DATE" != "x" ]
-  then
-     date -u $CERNVM_CONFIG_DATE > /dev/null 2>&1
-     hwclock --systohc > /dev/null 2>&1 || true
-  fi
-
   if [ "x$CERNVM_UUID" != "x" ]
   then
      echo "CERNVM_UUID=$CERNVM_UUID" > /etc/cernvm/machine.conf
   fi
-
-
 }
 
 
+. /etc/cernvm/functions
 [ -f /etc/cernvm/custom/config.sh ] && . /etc/cernvm/custom/config.sh
 
 config_opt=0
@@ -343,8 +331,10 @@ while getopts ?rhxypuc:d:s:t: opt
           d)     config_dir="$OPTARG"
                  ;;
           x)     customizeDesktop
+                 exit 0
                  ;;
           y)     createDesktopIcons
+                 exit 0
                  ;;
           g)     exit 0
                  ;;
@@ -357,6 +347,7 @@ while getopts ?rhxypuc:d:s:t: opt
                  shift 1
                  ;;
           t)     setupSwap "$OPTARG"
+                 exit 0
                  ;;
           u)
                  shift $(($OPTIND - 1))                
@@ -382,9 +373,6 @@ while getopts ?rhxypuc:d:s:t: opt
                  fi
                  if [ ! -f /etc/firstboot ] 
                  then 
-                    mv -f /etc/sudoers.cernvm /etc/sudoers
-	            chmod 0440 /etc/sudoers
-                    groupadd wheel > /dev/null 2>&1
                     touch /etc/firstboot
                  fi
  	         id $user > /dev/null 2>&1

@@ -1,0 +1,10 @@
+read_conf() {
+  for file in $@
+  do
+    if [ -e /etc/cernvm/$file.conf ]
+    then
+      eval `cat /etc/cernvm/$file.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'`
+    fi
+  done
+}
+

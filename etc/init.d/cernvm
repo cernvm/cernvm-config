@@ -6,6 +6,7 @@
 # description: cernvm
 
 . /etc/init.d/functions
+. /etc/cernvm/functions
 
 RETVAL=0
 
@@ -49,34 +50,28 @@ stop() {
   echo
 }
 
-read_conf() { 
-  for file in default tools site custom
-  do
-    if [ -e /etc/cernvm/$file.conf ]
-    then
-      eval `cat /etc/cernvm/$file.conf | tr -d \" | sed 's/=\$(.*)//g' | sed -n -e  '/^[^+]/s/\([^=]*\)[=]\(.*\)/\1="\2"; /gp'` 
-    fi
-  done
+
+prelude() {
+  [ -x /etc/cernvm/config ] && /etc/cernvm/config
+  read_conf default tools site custom
+  cernvm_init_dir="/etc/cernvm/cernvm.d"
+  [ -d $cernvm_init_dir ] && cernvm_scripts=`ls $cernvm_init_dir/*.sh`
 }
 
-[ -x /etc/cernvm/config ] && /etc/cernvm/config
-
-read_conf
-
-cernvm_init_dir="/etc/cernvm/cernvm.d"
-
-[ -d $cernvm_init_dir ] && cernvm_scripts=`ls $cernvm_init_dir/*.sh`
 
 case "$1" in
   start)
+        prelude
         shift 1
 	start $* 
 	;;
   stop)
+        prelude
         shift 1
 	stop $* 
 	;;
   restart|reload)
+        prelude
         shift 1
 	stop  $*
 	start $*
