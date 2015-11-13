@@ -146,6 +146,7 @@ customizeDesktop() {
         setGuiBoot
       fi
       if [ x$CERNVM_START_XDM == "xoff" ]
+      then
          setConsoleBoot 3
       fi
       if [ x$CERNVM_KEYBOARD != "x" -a -x /usr/bin/system-config-keyboard ]
