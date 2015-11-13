@@ -12,4 +12,4 @@ Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin
 root    ALL=(ALL)       ALL
 %wheel  ALL=(ALL)       NOPASSWD: ALL
 
-includedir /etc/sudoers.d
+#includedir /etc/sudoers.d
