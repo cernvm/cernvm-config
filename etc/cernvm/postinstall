@@ -37,7 +37,9 @@ replace_config() {
 ###########################################################################
 
 disable_services() {
+  systemctl disable avahi-daemon
   systemctl disable ksm
+  systemctl disable ksmtuned
   systemctl disable rabbitmq_server
   systemctl disable sssd
   systemctl disable sysstat
@@ -45,9 +47,11 @@ disable_services() {
 }
 
 enable_services() {
-  systemctl enable amiconfig-cernvm
   systemctl enable cernvm
+  systemctl enable cernvm-context-postscripts
+  systemctl enable cernvm-online
   systemctl enable cernvm-release
+  systemctl enable mnt-.rw-swapfile.swap
   systemctl enable ntpd
 }
 
@@ -88,6 +92,9 @@ context() {
 
 cvmfs() {
   /usr/bin/cvmfs_config setup
+  ln -sf /etc/cernvm/default.conf /etc/cvmfs/default.d/75-cvmdefault.conf
+  ln -sf /etc/cvmfs/site.conf /etc/cvmfs/default.d/76-site.conf
+  ln -sf /etc/cernvm/site.conf /etc/cvmfs/default.d/77-cvmsite.conf
 }
 
 cdrom() {

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. /etc/cernvm/functions
+
+RETVAL=0
+
+read_conf default tools site custom
+cernvm_init_dir="/etc/cernvm/context.d"
+[ -d $cernvm_init_dir ] && cernvm_scripts=`ls $cernvm_init_dir/*.sh`
+
+for f in ${cernvm_scripts}
+do
+  ( . $f; [ x`type -t context_start` = x"function" ] && context_start || exit 1 )
+  RETVAL=$[$RETVAL+$?]
+done
+
+exit $RETVAL

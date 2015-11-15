@@ -1,0 +1,9 @@
+[Unit]
+Description=Use /mnt/.rw/swapfile if available
+ConditionPathExists=/mnt/.rw/swapfile
+
+[Swap]
+What=/mnt/.rw/swapfile
+
+[Install]
+WantedBy=multi-user.target

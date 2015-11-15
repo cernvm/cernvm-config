@@ -1,0 +1,13 @@
+[Unit]
+Description=CernVM configuration
+After=local-fs.target network-online.target cernvm-contextualized.target
+Wants=local-fs.target network-online.target cernvm-contextualized.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/cernvm
+RemainAfterExit=yes
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target

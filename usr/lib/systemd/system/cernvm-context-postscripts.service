@@ -1,0 +1,13 @@
+[Unit]
+Description=CernVM boot contextualization hooks
+After=local-fs.target network-online.target cernvm-contextualized.target
+Wants=local-fs.target network-online.target cernvm-contextualized.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/cernvm-context-postscripts
+RemainAfterExit=yes
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target
