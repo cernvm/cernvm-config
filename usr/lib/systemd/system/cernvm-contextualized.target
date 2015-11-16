@@ -1,3 +1,0 @@
-[Unit]
-Description=CernVM contextualization fetched
-Wants=cernvm-online.service

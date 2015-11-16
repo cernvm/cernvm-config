@@ -1,7 +1,7 @@
 [Unit]
 Description=CernVM configuration
-After=local-fs.target network-online.target cernvm-contextualized.target
-Wants=local-fs.target network-online.target cernvm-contextualized.target
+After=local-fs.target network-online.target
+Wants=local-fs.target network-online.target
 
 [Service]
 Type=oneshot
