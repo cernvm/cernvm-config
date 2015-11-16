@@ -10,6 +10,6 @@ Defaults    env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY
 Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin
 
 root    ALL=(ALL)       ALL
-%wheel  ALL=(ALL)       NOPASSWD: ALL
+%wheel  ALL=(ALL)       ALL
 
 #includedir /etc/sudoers.d
