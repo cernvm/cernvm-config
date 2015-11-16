@@ -53,6 +53,7 @@ enable_services() {
   systemctl enable cernvm-release
   systemctl enable mnt-.rw-swapfile.swap
   systemctl enable ntpd
+  systemctl enable ucernvm-pinfiles
   systemctl enable vmware-guestd
 }
 

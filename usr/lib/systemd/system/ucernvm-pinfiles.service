@@ -1,0 +1,13 @@
+[Unit]
+Description=File from /.ucernvm_pinfiles pinned in the cache
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/ucernvm-pinfiles
+RemainAfterExit=yes
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target

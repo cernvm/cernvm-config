@@ -1,0 +1,13 @@
+#!/bin/sh
+
+while true; do
+  if [ -f /mnt/.rw/cache/pinned ]; then
+    rm -f /dev/pinfiles
+    exit 0
+  fi
+  if ! /sbin/pidof pin >/dev/null; then
+    rm -f /dev/pinfiles
+    exit 1
+  fi
+  sleep 1 
+done
