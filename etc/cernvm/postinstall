@@ -54,6 +54,8 @@ enable_services() {
   systemctl enable mnt-.rw-swapfile.swap
   systemctl enable ntpd
   systemctl enable ucernvm-pinfiles
+  systemctl enable vboxguest
+  systemctl enable vboxguest-daemon
   systemctl enable vmware-guestd
 }
 
