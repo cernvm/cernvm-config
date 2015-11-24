@@ -15,7 +15,7 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cdrom runlevel localcert timezone ssh" 
+ tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui" 
 
 ########################################################################### 
 # Helper
@@ -35,6 +35,12 @@ replace_config() {
 ###########################################################################
 # tasks
 ###########################################################################
+
+
+gui() {
+  replace_config /etc/xdg/xfce4/helpers.rc /etc/xdg/xfce4/helpers.rc.cernvm
+}
+
 
 disable_services() {
   systemctl disable avahi-daemon
