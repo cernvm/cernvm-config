@@ -34,25 +34,25 @@ greeter=/usr/libexec/lxdm-greeter-gtk
 gtk_theme=Clearlooks
 
 ## background of the greeter
-bg=/usr/share/backgrounds/default.png
+#bg=/usr/share/lxdm/themes/CernVM/background.png
 
 ## if show bottom pane
 bottom_pane=1
 
 ## if show language select control
-lang=1
+lang=0
 
 ## if show keyboard layout select control
-keyboard=0
+keyboard=1
 
 ## the theme of greeter
-theme=Industrial
+theme=CernVM
 
 [input]
 
 [userlist]
 ## if disable the user list control at greeter
-disable=0
+disable=1
 
 ## whitelist user
 white=
