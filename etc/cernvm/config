@@ -26,18 +26,13 @@ setConsoleBoot() {
 }
 
 
-# TODO: lxdm
 switchAutoLogin() {
   local how=$1
 
   if [ "x$how" = "xon" ]; then
-    sed -i -e "/^auto_login[ \t]*/d" /etc/slim.conf
-    sed -i -e "/^default_user[ \t]*/d" /etc/slim.conf
-    echo "default_user $CERNVM_USER" >> /etc/slim.conf
-    echo "auto_login yes" >> /etc/slim.conf
+    sed -i -e "s/^# *autologin=.*$/autologin=$CERNVM_USER/" /etc/lxdm/lxdm.conf
   elif [ "x$how" = "xoff" ]; then
-    sed -i -e "/^auto_login[ \t]*/d" /etc/slim.conf
-    sed -i -e "/^default_user[ \t]*/d" /etc/slim.conf
+    sed -i -e "s/^autologin=.*$/# autologin=/" /etc/lxdm/lxdm.conf
   else
     echo "unknown option to switchAutoLogin: $how" 1>&2
     return 1
