@@ -54,10 +54,12 @@ disable_services() {
 }
 
 enable_services() {
+  systemctl enable amiconfig
   systemctl enable cernvm
   systemctl enable cernvm-context-postscripts
   systemctl enable cernvm-online
   systemctl enable cernvm-release
+  systemctl reenable cloud-final.service
   systemctl enable mnt-.rw-swapfile.swap
   systemctl enable ntpd
   systemctl enable ucernvm-pinfiles
@@ -119,13 +121,6 @@ runlevel() {
 
 cernvm() {
   :
-  # /sbin/chkconfig --add cernvm
-  # /sbin/chkconfig --add cernvm-context
-  # /sbin/chkconfig --add amiconfig-cernvm
-  # /sbin/chkconfig --add vmcontext_hepix
-  # /sbin/chkconfig --add vmcontext_prolog
-  # /sbin/chkconfig --add vmcontext_epilog
-  # /sbin/chkconfig --add cernvm-release
 }
 
 # Remove localhost certificate / key (recreated on first boot)
@@ -135,19 +130,8 @@ localcert() {
 }
 
 
-###########################################################################
-# Turn off cloud-init
-###########################################################################
-cloud_init () {
-  /sbin/chkconfig cloud-init-local on
-  /sbin/chkconfig cloud-init on
-  /sbin/chkconfig cloud-config on
-  /sbin/chkconfig cloud-final on
-}
-
-
 # Allow ssh key injection
-ssh () {
+ssh() {
   if [ ! -d /root/.ssh ] 
   then
     mkdir -p /root/.ssh
