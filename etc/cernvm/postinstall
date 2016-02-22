@@ -18,7 +18,8 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  context gnome x11dirs xfce4 network_manager plymouth ucernvm \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
-                 shoal rabbitmq tuned sysstat tex glideinwms waagent default_java" 
+                 shoal rabbitmq tuned sysstat tex glideinwms waagent default_java \
+                 sudo" 
 
 ########################################################################### 
 # Helper
@@ -38,6 +39,15 @@ replace_config() {
 ###########################################################################
 default_java() {
   update-alternatives --set java /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/bin/java
+}
+
+
+sudo() {
+  # OpenNebula cloud-init data source needs sudo without a tty
+  if ! grep -q 'Defaults:root !requiretty' /etc/sudoers; 
+  then 
+    echo 'Defaults:root !requiretty' >> /etc/sudoers
+  fi
 }
 
 
