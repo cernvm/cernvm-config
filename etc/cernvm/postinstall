@@ -15,7 +15,7 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui" 
+ tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui prelink" 
 
 ########################################################################### 
 # Helper
@@ -203,6 +203,11 @@ precron() {
   /bin/sh /etc/cron.daily/mlocate
   echo "  --> prelink"
   /bin/sh /etc/cron.daily/prelink
+}
+
+# Update static linker cache
+prelink() {
+  /sbin/ldconfig -X
 }
 
 
