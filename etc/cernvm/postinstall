@@ -51,7 +51,6 @@ disable_services() {
   systemctl disable sssd
   systemctl disable sysstat
   systemctl disable xrdp
-  systemctl disable ldconfig
 }
 
 enable_services() {
