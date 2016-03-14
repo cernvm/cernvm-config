@@ -207,7 +207,8 @@ precron() {
 
 # Update static linker cache
 prelink() {
-  /sbin/ldconfig -X
+  /sbin/ldconfig
+  touch /etc/.updated
 }
 
 
