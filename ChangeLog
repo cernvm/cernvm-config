@@ -1,3 +1,7 @@
+2016-04-07 Jakob Blomer
+M	etc/cernvm/cernvm.d/S05cvmfs-config.sh
+A	etc/cernvm/cernvm.d/S06cms-glidein.sh
+
 2016-02-22 Jakob Blomer
 M	etc/sudoers
 M	etc/cernvm/postinstall
