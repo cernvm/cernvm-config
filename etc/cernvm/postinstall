@@ -632,6 +632,8 @@ precron() {
   /bin/sh /etc/cron.daily/prelink
   echo "  --> readahead"
   /etc/cron.daily/readahead.cron
+  echo "  --> disable logwatch"
+  chmod -x /etc/cron.daily/0logwatch
 }
 
 
