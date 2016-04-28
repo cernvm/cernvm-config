@@ -3,7 +3,7 @@
 ###########################################################################
 
 cernvm_start () {
-  if [ `lspci 2>/dev/null | grep -c Ethernet` -eq 2 ]
+  if [ `lspci 2>/dev/null | grep -c Ethernet` -ge 2 ]
   then 
     if [ ! -f  /etc/sysconfig/network-scripts/ifcfg-eth1 ] 
     then
