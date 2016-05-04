@@ -7,6 +7,7 @@ cernvm_start () {
   # amiconfig contextualization
   if [ -f /mnt/.rw/context/ucontext ]; then
     grep ^_UCONTEXT_CVMFS_HTTP_PROXY= /mnt/.rw/context/ucontext | sed s/^_UCONTEXT_// >> /etc/cvmfs/site.conf
+    grep ^_UCONTEXT_CVMFS_PAC_URLS= /mnt/.rw/context/ucontext | sed s/^_UCONTEXT_// >> /etc/cvmfs/site.conf
   fi
   
   if [ -d /etc/cvmfs/default.d ]; then

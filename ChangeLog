@@ -1,3 +1,9 @@
+2016-05-04 Jakob Blomer
+M	etc/cernvm/cernvm.d/S05cvmfs-config.sh
+
+2016-04-29 Jakob Blomer
+M	.ucernvm_bootstrap
+
 2016-04-28 Jakob Blomer
 M	etc/cernvm/cernvm.d/S20eth1.sh
 
