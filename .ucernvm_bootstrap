@@ -27,21 +27,19 @@ if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
   mv ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf.disabled ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf
 fi
 
-if [ -f /user-data ]; then
-  if grep -q '.*####.*####.*' /user-data; then
-    log_start "glideinWMS user data found, activating agent..."
-    cp /user-data ${ROOT_PATH}/tmp/glideinwms-user-data
-    sed -i -e 's,\(^glidein_pilot:.*:\)/sbin/nologin$,\1/bin/bash,' ${ROOT_PATH}/etc/passwd
-    for runlevel in 2 3 4 5; do
-      rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
-      ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
-    done
-    for runlevel in 0 1 6; do
-      rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
-      ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
-    done
-    log_ok
-  fi
+if [ -f /glideinwms-user-data ]; then
+  log_start "glideinWMS user data found, activating agent..."
+  cp /glideinwms-user-data ${ROOT_PATH}/tmp/glideinwms-user-data
+  sed -i -e 's,\(^glidein_pilot:.*:\)/sbin/nologin$,\1/bin/bash,' ${ROOT_PATH}/etc/passwd
+  for runlevel in 2 3 4 5; do
+    rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
+    ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
+  done
+  for runlevel in 0 1 6; do
+    rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
+    ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
+  done
+  log_ok
 fi
 
 if [ -f /etc/sysconfig/network-scripts/ifcfg-eth0 ]; then
