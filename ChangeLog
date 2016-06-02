@@ -1,3 +1,6 @@
+2016-06-02 Jakob Blomer
+M	etc/condor/config.d/50cernvm
+
 2016-05-11 Jakob Blomer
 M	.ucernvm_bootstrap
 

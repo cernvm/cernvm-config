@@ -31,3 +31,7 @@ TRUST_UID_DOMAIN = TRUE
 ##  (more reliable on some cloud networks)
 UPDATE_COLLECTOR_WITH_TCP = True
 COLLECTOR_SOCKET_CACHE_SIZE = 1000
+
+## Avoid crashes of the collector
+CONDOR_DEVELOPERS_COLLECTOR = NONE
+
