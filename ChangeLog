@@ -1,3 +1,11 @@
+2016-06-27 Jakob Blomer
+A	etc/cvmfs/config.d/cernvm-prod.cern.ch.conf
+M	etc/cvmfs/config.d/cernvm-devel.cern.ch.conf
+M	etc/cvmfs/config.d/cernvm-testing.cern.ch.conf
+M	etc/cvmfs/config.d/cernvm-slc4.cern.ch.conf
+M	etc/cvmfs/config.d/cernvm-slc5.cern.ch.conf
+M	etc/cvmfs/config.d/cernvm-sl7.cern.ch.conf
+
 2016-06-02 Jakob Blomer
 M	etc/condor/config.d/50cernvm
 
