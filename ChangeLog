@@ -1,3 +1,6 @@
+2016-07-25 Jakob Blomer
+A	usr/bin/condor_chirp (symlink)
+
 2016-06-27 Jakob Blomer
 A	etc/cvmfs/config.d/cernvm-prod.cern.ch.conf
 M	etc/cvmfs/config.d/cernvm-devel.cern.ch.conf
