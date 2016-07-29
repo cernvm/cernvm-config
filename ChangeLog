@@ -1,3 +1,7 @@
+2016-07-29 Jakob Blomer
+A	usr/bin/sh (symlink)
+A	usr/bin/bash (symlink)
+
 2016-07-28 Jakob Blomer
 A	etc/resolv.conf (empty)
 
