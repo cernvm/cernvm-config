@@ -65,7 +65,6 @@ enable_services() {
   systemctl reenable cloud-final.service
   systemctl enable mnt-.rw-swapfile.swap
   systemctl enable ntpd
-  systemctl enable nscd
   systemctl enable ucernvm-pinfiles
   systemctl enable vboxguest
   systemctl enable vboxguest-daemon
