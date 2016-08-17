@@ -44,7 +44,10 @@ gui() {
 
 disable_services() {
   systemctl disable avahi-daemon
+  systemctl disable eosd
   systemctl disable ganglia-gmond
+  systemctl disable glusterd
+  systemctl disable libvirtd
   systemctl disable ksm
   systemctl disable ksmtuned
   systemctl disable rabbitmq_server
