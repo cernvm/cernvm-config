@@ -2,11 +2,6 @@
 
 ROOT_PATH=$1
 
-if [ ! -d ${ROOT_PATH}/mnt/.rw/afs-cache -a -d ${ROOT_PATH}/usr/vice/cache ]; then
-  mv ${ROOT_PATH}/usr/vice/cache ${ROOT_PATH}/mnt/.rw/afs-cache
-  ln -s /mnt/.rw/afs-cache ${ROOT_PATH}/usr/vice/cache
-fi  
-
 if [ "x$UCONTEXT_SRC" = "xEC2" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Ec2/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_ec2.cfg    
 fi
@@ -15,8 +10,31 @@ if [ "x$UCONTEXT_SRC" = "xOpenStack" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, OpenStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_openstack.cfg
 fi
 
+if [ "x$UCONTEXT_SRC" = "xCloudStack" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, CloudStack/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_cloudstack.cfg
+fi
+
+if [ "x$UCONTEXT_SRC" = "xAzure" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, Azure/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_azure.cfg
+fi
+
 if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
   mv ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf.disabled ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf
+fi
+
+if [ -f /glideinwms-user-data ]; then
+  log_start "glideinWMS user data found, activating agent..."
+  cp /glideinwms-user-data ${ROOT_PATH}/tmp/glideinwms-user-data
+  sed -i -e 's,\(^glidein_pilot:.*:\)/sbin/nologin$,\1/bin/bash,' ${ROOT_PATH}/etc/passwd
+  for runlevel in 2 3 4 5; do
+    rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
+    ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/S90glideinwms-pilot
+  done
+  for runlevel in 0 1 6; do
+    rm -f ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
+    ln -s ../init.d/glideinwms-pilot ${ROOT_PATH}/etc/rc.d/rc${runlevel}.d/K10glideinwms-pilot
+  done
+  log_ok
 fi
 
 if [ -f /etc/sysconfig/network-scripts/ifcfg-eth0 ]; then
