@@ -53,7 +53,7 @@ disable_services() {
   systemctl disable rabbitmq_server
   systemctl disable sssd
   systemctl disable sysstat
-  systemctl disable waagent
+  systemctl disable walinuxagent
   systemctl disable xrdp
 }
 
