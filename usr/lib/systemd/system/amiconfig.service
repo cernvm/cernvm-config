@@ -1,0 +1,14 @@
+[Unit]
+Description=amiconfig contextualization agent
+ConditionPathExists=/mnt/.rw/context/ucontext
+After=local-fs.target cernvm.service
+Wants=local-fs.target cernvm.service
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/amiconfig
+RemainAfterExit=yes
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target
