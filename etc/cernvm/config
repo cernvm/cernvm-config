@@ -18,6 +18,7 @@ setupSwap() {
 
 setGuiBoot() {
   systemctl set-default graphical.target
+  nohup systemctl isolate graphical.target >/dev/null 2>&1 &
 }
 
 
