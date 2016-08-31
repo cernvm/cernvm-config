@@ -19,7 +19,7 @@ if [ "x$UCONTEXT_SRC" = "xAzure" ]; then
 fi
 
 if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
-  mv ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf.disabled ${ROOT_PATH}/etc/init/google-accounts-manager-task.conf
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, GCE/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_gce.cfg
 fi
 
 if [ -f /glideinwms-user-data ]; then
