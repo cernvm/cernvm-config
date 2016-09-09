@@ -42,6 +42,12 @@ switchAutoLogin() {
 }
 
 
+xrdpKeys() {
+  cd /etc/xrdp
+  [ ! -s rsakeys.ini ] && /bin/xrdp-keygen xrdp || true
+}
+
+
 getConfig() {
   local cfg=$1
   local url=$2
@@ -289,7 +295,7 @@ config_dir=/etc/cernvm
 config_url=""
 CONFIG_FILES="config default tools domain site machine custom"
 
-while getopts ?rhxypuc:d:s:t: opt 
+while getopts ?rhxXypuc:d:s:t: opt 
      do
           case $opt in
           c)     config_opt=1 
@@ -330,6 +336,9 @@ while getopts ?rhxypuc:d:s:t: opt
           d)     config_dir="$OPTARG"
                  ;;
           x)     customizeDesktop
+                 exit 0
+                 ;;
+          X)     xrdpKeys
                  exit 0
                  ;;
           y)     createDesktopIcons

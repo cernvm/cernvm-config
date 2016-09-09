@@ -15,7 +15,8 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui prelink" 
+ tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui prelink \
+ xrdp" 
 
 ########################################################################### 
 # Helper
