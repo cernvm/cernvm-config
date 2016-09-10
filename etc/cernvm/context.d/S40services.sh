@@ -6,7 +6,8 @@ context_start () {
   echo
   for service in $(echo "$CERNVM_SERVICES" | sed 's/,/ /g')
   do
-    systemctl start $service
+    /bin/systemctl -q enable $service
+    /bin/systemctl -q start $service
   done
 }
 
