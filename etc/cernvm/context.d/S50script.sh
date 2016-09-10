@@ -3,6 +3,12 @@
 ###########################################################################
 
 context_start () {
+  # Run it only once per boot
+  local marker_file=/run/cernvm/contextualization_command
+  [ -f $marker_file ] && return 0 || true
+  mkdir -d $(dirname $marker_file)
+  touch $marker_file
+
   if [ "x$CERNVM_CONTEXTUALIZATION_COMMAND" != "x" ]
   then
        entry="$CERNVM_CONTEXTUALIZATION_COMMAND"
