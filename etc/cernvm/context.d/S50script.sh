@@ -5,7 +5,10 @@
 context_start () {
   # Run it only once per boot
   local marker_file=/run/cernvm/contextualization_command.executed
-  [ -f $marker_file ] && return 0 || true
+  # amiconfig forces execution
+  if [ "x$1" != "xforce" ]; then
+    [ -f $marker_file ] && return 0 || true
+  fi
   mkdir -p $(dirname $marker_file)
   touch $marker_file
 

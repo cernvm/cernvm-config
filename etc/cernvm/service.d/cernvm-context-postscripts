@@ -10,7 +10,7 @@ cernvm_init_dir="/etc/cernvm/context.d"
 
 for f in ${cernvm_scripts}
 do
-  ( . $f; [ x`type -t context_start` = x"function" ] && context_start || exit 1 )
+  ( . $f; [ x`type -t context_start` = x"function" ] && context_start $@ || exit 1 )
   RETVAL=$[$RETVAL+$?]
 done
 
