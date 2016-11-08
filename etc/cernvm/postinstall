@@ -70,6 +70,7 @@ enable_services() {
   systemctl enable ucernvm-pinfiles
   systemctl enable vboxguest
   systemctl enable vboxguest-daemon
+  systemctl enable vboxguest-sf
   systemctl enable vmware-guestd
 }
 
