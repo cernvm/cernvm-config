@@ -119,6 +119,7 @@ createDesktopIcons() {
       name=$(echo "$icon" | cut -d, -f1 | sed 's/~/ /g')
       entry=$(echo "$icon" | cut -d, -f2 | sed 's/~/ /g')
       echo "$entry" | base64 -d > "/etc/skel/Desktop/${name}.desktop"
+      chmod +x "/etc/skel/Desktop/${name}.desktop"
     done
   fi
 }
