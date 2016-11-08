@@ -41,6 +41,14 @@ if [ -f /etc/sysconfig/network-scripts/ifcfg-eth0 ]; then
   cp /etc/sysconfig/network-scripts/ifcfg-eth0 ${ROOT_PATH}/etc/sysconfig/network-scripts/ifcfg-eth0
 fi
 
+# Use newer VirtualBox modules if available
+if [ -f ${ROOT_PATH}/lib/modules/$(uname -r)/misc/vboxguest51.ko ]; then
+  for mod in vboxguest vboxvideo vboxsf; do
+    mv ${ROOT_PATH}/lib/modules/$(uname -r)/misc/${mod}51.ko \
+       ${ROOT_PATH}/lib/modules/$(uname -r)/misc/${mod}.ko
+  done
+fi
+
 SYSTEM_ID=$(cat $(ls -tr ${ROOT_PATH}/.installed_cernvm-system-* 2>/dev/null | tail -n1) /dev/null)
 if [ "x$SYSTEM_ID" != "x" ]; then
   log_start "Booting"
