@@ -3,6 +3,7 @@ Description=amiconfig contextualization agent
 ConditionPathExists=/mnt/.rw/context/ucontext
 After=local-fs.target cernvm.service
 Wants=local-fs.target cernvm.service
+Before=system-getty.slice
 
 [Service]
 Type=oneshot
