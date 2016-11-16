@@ -52,6 +52,7 @@ disable_services() {
   systemctl disable ksm
   systemctl disable ksmtuned
   systemctl disable rabbitmq_server
+  systemctl disable squid
   systemctl disable sssd
   systemctl disable sysstat
   systemctl disable walinuxagent
