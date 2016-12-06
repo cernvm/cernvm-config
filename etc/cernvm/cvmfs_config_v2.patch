@@ -1,0 +1,12 @@
+--- cvmfs_config.orig	2016-12-06 11:53:39.035885738 +0100
++++ cvmfs_config	2016-12-06 11:56:04.510875588 +0100
+@@ -1351,7 +1351,7 @@
+ list_mounts() {
+   # Matches lines that begin with cvmfs2 or /usr/bin/cvmfs2 (/bin/cvmfs2,
+   # /usr/local/bin/cvmfs2)
+-  mount -t $fuse_fs_type | grep "^\(/[^[:space:]]*/\)\?cvmfs2[[:space:]]"
++  mount -t $fuse_fs_type | grep "^\(/[^[:space:]]*/\)\?cvmfs2[[:space:]]" | grep -v "/mnt/.rw/cvmfs/"
+ }
+ 
+
+
