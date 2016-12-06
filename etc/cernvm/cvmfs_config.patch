@@ -1,0 +1,11 @@
+--- cvmfs_config.orig	2016-12-06 10:02:53.728617219 +0100
++++ cvmfs_config	2016-12-06 10:04:42.231407366 +0100
+@@ -1349,7 +1349,7 @@
+ 
+ 
+ list_mounts() {
+-  mount -t $fuse_fs_type | grep "^cvmfs2[[:space:]]"
++  mount -t $fuse_fs_type | grep "^cvmfs2[[:space:]]" | grep -v "[[:space:]]/mnt/.rw/cvmfs/"
+ }
+ 
+
