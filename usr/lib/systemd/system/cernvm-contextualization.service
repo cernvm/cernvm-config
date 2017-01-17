@@ -1,0 +1,13 @@
+[Unit]
+Description=CernVM cluster online API contextualization
+After=cloud-init.service
+Before=cloud-config.service multi-user.target
+Wants=cloud-init.service cloud-config.service
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/cernvm-contextualization
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

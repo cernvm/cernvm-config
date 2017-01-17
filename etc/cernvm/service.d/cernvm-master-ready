@@ -1,0 +1,139 @@
+#!/bin/sh
+
+CLUSTER_SERVICE_URL_DEFAULT=https://cernvm-online.cern.ch
+# This file has to be fetched by the cloudinit service
+CONTEXT_FILE=/var/lib/cloud/instance/user-data.txt
+# amiconfig context file, we extract 'cvm_cluster_pin', 'cvm_cluster_master' and 'cvm_service_url' fields from there
+AMI_CONTEXT_FILE=/mnt/.rw/context/user-data
+
+# How many times we try to send the ready status
+# A try every ~30s * 10 = ~6minutes
+MAX_TRIES=10
+# Sleep time in seconds between each try
+SLEEP_TIME_BETWEEN_REQUESTS=25
+# Name of the key submitted to the server
+READY_STATUS_KEY_FIELD="master_ready"
+READY_STATUS_KEY_VALUE="yes"
+
+# Item name in the context file (in the ucernvm section)
+CLUSTER_SERVICE_URL_FIELD="cvm_service_url"
+CLUSTER_MASTER_CONTEXT_FIELD="cvm_cluster_master"
+CLUSTER_PIN_CONTEXT_FIELD="cvm_cluster_pin"
+
+# Return cluster_pin from the context file
+get_cluster_pin_from_context() {
+    # Check if the context file has cluster_pin inside ucernvm section
+    # sed prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
+    local PIN_LINE=
+    PIN_LINE=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_PIN_CONTEXT_FIELD=" )
+    if [ $? -ne 0 ]; then
+        echo "" # Does not have cluster_pin
+        return 1
+    fi
+
+    # Erase the first occurence of 'cluster_pin=' from the grepped pin line
+    local CLUSTER_PIN=
+    CLUSTER_PIN=$( echo "$PIN_LINE" | sed -e "s/$CLUSTER_PIN_CONTEXT_FIELD=//1" )
+
+    echo "$CLUSTER_PIN"
+}
+
+# Return cluster contextualization URL: either from the context file or the default value
+get_service_url() {
+    # Check if the context file has cluster_service_url inside ucernvm section
+    # sed prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
+    local URL_LINE=
+    URL_LINE=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_SERVICE_URL_FIELD=" )
+    if [ $? -ne 0 ]; then
+        echo "$CLUSTER_SERVICE_URL_DEFAULT" # Does not have cluster_service_url, using default
+        return 0
+    fi
+
+    # Erase the first occurence of 'cluster_service_url=' from the grepped pin line
+    local SERVICE_URL=
+    SERVICE_URL=$( echo "$URL_LINE" | sed -e "s/$CLUSTER_SERVICE_URL_FIELD=//1" )
+    if [ "$SERVICE_URL" ]; then
+        echo "$SERVICE_URL"
+    else
+        echo "$CLUSTER_SERVICE_URL_DEFAULT" # empty field, using default
+    fi
+}
+
+# Create a marker file indicating that master_ready status has been sent
+create_ci_marker_file() {
+    touch /etc/cernvm/cloudinit-master-ready-sent
+}
+
+# Check if marker file exists and context file exists
+marker_file_exists() {
+    if [ -f /etc/cernvm/cloudinit-master-ready-sent -o ! -f "$CONTEXT_FILE" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+send_ready_status() {
+    local CLUSTER_PIN=
+    CLUSTER_PIN=$( get_cluster_pin_from_context )
+    if [ "x$CLUSTER_PIN" = "x" ]; then
+        echo "Context file does not have a cluster pin\n"
+        return 1
+    fi
+
+    local SERVICE_URL=
+    SERVICE_URL=$( get_service_url )
+
+    #Data to be send: {"key": "master_ready", "value": "yes"}
+    local DATA=
+    DATA="{ \"key\": \"$READY_STATUS_KEY_FIELD\", \"value\": \"$READY_STATUS_KEY_VALUE\" }" 
+
+    local CURL_HEADERS="-H Content-Type:application/json"
+
+    #@- == take data from stdin, ignore output and print only the response status code
+    local CURL_CMD="curl -s -o /dev/null -w %{http_code} -XPOST $CURL_HEADERS -d @- $SERVICE_URL/api/clusters/$CLUSTER_PIN/keys"
+
+    local cnt=1
+    local status_code=
+    while [ $cnt -le $MAX_TRIES ]; do
+        status_code=$( echo "$DATA" | $CURL_CMD )
+        if [ "x$status_code" = "x201" ]; then
+            break  # success
+        fi
+        echo "Try $cnt/$MAX_TRIES"
+        cnt=$(($cnt+1))
+        local rand=$( grep -m1 -ao '[0-9]' /dev/urandom | head -n1 ) # get 0-9
+        sleep $(( $SLEEP_TIME_BETWEEN_REQUESTS + $rand )) #add 10s jitter
+    done
+
+    if [ "x$status_code" = "x201" ]; then
+        echo "Master ready status successfully pushed to the server\n"
+        return 0
+    else
+        echo "Unable to push the master ready status to the server\n"
+        return 1
+    fi
+}
+
+# We execute this code only for master machines (i.e. cvm_cluster_master item in the context file)
+main_func() {
+    marker_file_exists && return 0  # Contextualization has run before
+
+    # Check if the context file has cluster_master inside ucernvm section
+    # 'sed' prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
+    local master_field=
+    master_field=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_MASTER_CONTEXT_FIELD=" )
+    # erase the first occurence of 'cluster_master=' from the grepped master line
+    master_field=$( echo "$master_field" | sed -e "s/$CLUSTER_MASTER_CONTEXT_FIELD=//1" 2>/dev/null )
+
+    if [ "x$master_field" = "xtrue" -o "x$master_field" = "xTrue" -o "x$master_field" = "x1" -o "x$master_field" = "xyes" ]; then
+        echo "Sending ready status to the contextualization service"
+        send_ready_status
+    else
+        echo "This is a worker machine, doing nothing"
+    fi
+
+    # Create a marker file so the contextualization runs only once
+    create_ci_marker_file
+}
+main_func # call the main contextualization function
