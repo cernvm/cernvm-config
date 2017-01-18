@@ -63,6 +63,8 @@ enable_services() {
   systemctl enable cernvm
   systemctl enable cernvm-context-postscripts
   systemctl enable cernvm-online
+  systemctl enable cernvm-contextualization
+  systemctl enable cernvm-master-ready
   systemctl enable cernvm-release
   systemctl reenable cloud-final.service
   systemctl enable mnt-.rw-swapfile.swap

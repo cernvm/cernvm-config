@@ -20,38 +20,19 @@ CLUSTER_SERVICE_URL_FIELD="cvm_service_url"
 CLUSTER_MASTER_CONTEXT_FIELD="cvm_cluster_master"
 CLUSTER_PIN_CONTEXT_FIELD="cvm_cluster_pin"
 
+
+# Source file with the context file data
+source /mnt/.rw/context/ucontext
+
 # Return cluster_pin from the context file
 get_cluster_pin_from_context() {
-    # Check if the context file has cluster_pin inside ucernvm section
-    # sed prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
-    local PIN_LINE=
-    PIN_LINE=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_PIN_CONTEXT_FIELD=" )
-    if [ $? -ne 0 ]; then
-        echo "" # Does not have cluster_pin
-        return 1
-    fi
-
-    # Erase the first occurence of 'cluster_pin=' from the grepped pin line
-    local CLUSTER_PIN=
-    CLUSTER_PIN=$( echo "$PIN_LINE" | sed -e "s/$CLUSTER_PIN_CONTEXT_FIELD=//1" )
-
-    echo "$CLUSTER_PIN"
+    echo "$_UCONTEXT_CVM_CLUSTER_PIN"
 }
 
 # Return cluster contextualization URL: either from the context file or the default value
 get_service_url() {
-    # Check if the context file has cluster_service_url inside ucernvm section
-    # sed prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
-    local URL_LINE=
-    URL_LINE=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_SERVICE_URL_FIELD=" )
-    if [ $? -ne 0 ]; then
-        echo "$CLUSTER_SERVICE_URL_DEFAULT" # Does not have cluster_service_url, using default
-        return 0
-    fi
-
-    # Erase the first occurence of 'cluster_service_url=' from the grepped pin line
     local SERVICE_URL=
-    SERVICE_URL=$( echo "$URL_LINE" | sed -e "s/$CLUSTER_SERVICE_URL_FIELD=//1" )
+    SERVICE_URL=$_UCONTEXT_CVM_SERVICE_URL
     if [ "$SERVICE_URL" ]; then
         echo "$SERVICE_URL"
     else
@@ -67,6 +48,16 @@ create_ci_marker_file() {
 # Check if marker file exists and context file exists
 marker_file_exists() {
     if [ -f /etc/cernvm/cloudinit-master-ready-sent -o ! -f "$CONTEXT_FILE" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if 'cvm_cluster_master' was set in the ucernvm section
+is_on_master_machine() {
+    local master_field=$_UCONTEXT_CVM_CLUSTER_MASTER
+    if [ "x$master_field" = "xtrue" -o "x$master_field" = "xTrue" -o "x$master_field" = "x1" -o "x$master_field" = "xyes" ]; then
         return 0
     else
         return 1
@@ -91,7 +82,7 @@ send_ready_status() {
     local CURL_HEADERS="-H Content-Type:application/json"
 
     #@- == take data from stdin, ignore output and print only the response status code
-    local CURL_CMD="curl -s -o /dev/null -w %{http_code} -XPOST $CURL_HEADERS -d @- $SERVICE_URL/api/clusters/$CLUSTER_PIN/keys"
+    local CURL_CMD="curl -s -o /dev/null -w %{http_code} -XPOST $CURL_HEADERS -d @- $SERVICE_URL/api/v1/clusters/$CLUSTER_PIN/keys"
 
     local cnt=1
     local status_code=
@@ -119,14 +110,7 @@ send_ready_status() {
 main_func() {
     marker_file_exists && return 0  # Contextualization has run before
 
-    # Check if the context file has cluster_master inside ucernvm section
-    # 'sed' prints all lines  in the [ucernvm-*] section, grep greps the cluster_pin line
-    local master_field=
-    master_field=$( sed -n '/\[ucernvm-begin\]/,/\[ucernvm-end\]/p' "$AMI_CONTEXT_FILE" 2>/dev/null | grep "$CLUSTER_MASTER_CONTEXT_FIELD=" )
-    # erase the first occurence of 'cluster_master=' from the grepped master line
-    master_field=$( echo "$master_field" | sed -e "s/$CLUSTER_MASTER_CONTEXT_FIELD=//1" 2>/dev/null )
-
-    if [ "x$master_field" = "xtrue" -o "x$master_field" = "xTrue" -o "x$master_field" = "x1" -o "x$master_field" = "xyes" ]; then
+    if is_on_master_machine; then
         echo "Sending ready status to the contextualization service"
         send_ready_status
     else
