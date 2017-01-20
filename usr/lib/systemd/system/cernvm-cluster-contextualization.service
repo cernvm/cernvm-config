@@ -7,7 +7,7 @@ ConditionPathExists=/mnt/.rw/context/ucontext
 
 [Service]
 Type=oneshot
-ExecStart=/etc/cernvm/service.d/cernvm-contextualization
+ExecStart=/etc/cernvm/service.d/cernvm-cluster-contextualization
 RemainAfterExit=yes
 
 [Install]

@@ -1,0 +1,14 @@
+[Unit]
+Description=CernVM cluster contextualization: send master ready status on master machine
+After=cloud-final.service multi-user.target cernvm-cluster-contextualization.service
+Wants=cloud-final.service cloud-config.service cernvm-cluster-contextualization.service
+ConditionPathExists=/mnt/.rw/context/ucontext
+
+[Service]
+Type=oneshot
+ExecStart=/etc/cernvm/service.d/cernvm-cluster-master-ready
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
