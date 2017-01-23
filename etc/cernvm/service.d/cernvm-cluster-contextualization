@@ -1,0 +1,130 @@
+#!/bin/sh
+
+# This script fetches the master data from the contextualization API. We expect the data (IP address so far)
+# to be readily available. To ensure this, we do the blocking wait in the bootloader (waiting for the 'master_ready'
+# field to appear)
+
+############################################################
+# CLUSTER CONTEXTUALIZATION SECTION
+
+CLUSTER_SERVICE_URL_DEFAULT=https://cernvm-online.cern.ch
+# This file has to be fetched by the cloudinit service and placed in the following location
+CONTEXT_FILE=/var/lib/cloud/instance/user-data.txt
+
+# How many times we try to connect to the service
+# A try every ~15s * 5 = ~1.25minutes
+MAX_TRIES=5
+# Sleep time in seconds between each try
+SLEEP_TIME_BETWEEN_REQUESTS=15
+# Key name under which the master stores its IP in the contextualization service
+MASTER_IP_FIELD="master_ip"
+# Pattern in the context file, which gets replaced by the fetched data
+PLACECEHOLDER_REPLACEMENT=###MASTER_IP_PLACEHOLDER###
+
+
+# Source file with the context file data
+source /mnt/.rw/context/ucontext
+
+# Return cluster_pin from the context file
+get_cluster_pin_from_context() {
+    echo "$_UCONTEXT_CVM_CLUSTER_PIN"
+}
+
+# Return cluster contextualization URL: either from the context file or the default value
+get_service_url() {
+    local SERVICE_URL=
+    SERVICE_URL=$_UCONTEXT_CVM_SERVICE_URL
+    if [ "$SERVICE_URL" ]; then
+        echo "$SERVICE_URL"
+    else
+        echo "$CLUSTER_SERVICE_URL_DEFAULT" # empty field, using default
+    fi
+}
+
+# Create a marker file indicating that contextualization has been done
+create_ci_marker_file() {
+    touch /etc/cernvm/cloudinit-contextualized
+}
+
+# Check if marker file exists and context file exists
+marker_file_exists() {
+    if [ -f /etc/cernvm/cloudinit-contextualized -o ! -f "$CONTEXT_FILE" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if 'cvm_cluster_master' was set in the ucernvm section
+is_on_master_machine() {
+    local master_field=$_UCONTEXT_CVM_CLUSTER_MASTER
+    if [ "x$master_field" = "xtrue" -o "x$master_field" = "xTrue" -o "x$master_field" = "x1" -o "x$master_field" = "xyes" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+############################################################
+# SLAVE PART
+
+slave_contextualization() {
+    local CLUSTER_PIN=
+    CLUSTER_PIN=$( get_cluster_pin_from_context )
+    if [ "x$CLUSTER_PIN" = "x" ]; then
+        echo "Context file (cloud-init) does not have a cluster pin\n"
+        return 0
+    fi
+
+    echo "Slave cluster contextualization: getting master keys"
+
+    local SERVICE_URL=
+    SERVICE_URL=$( get_service_url )
+
+    local CURL_HEADERS="-H Accept:text/plain"
+    # Output format: Content_of_the_reply\n\nstatus_code_number
+    local CURL_CMD_TEMPLATE="curl -s -w \n\n%{http_code} -XGET"
+    local CURL_CMD="$CURL_CMD_TEMPLATE $SERVICE_URL/api/v1/clusters/$CLUSTER_PIN/keys/$MASTER_IP_FIELD $CURL_HEADERS"
+
+    response=
+    cnt=1
+    while [ $cnt -le $MAX_TRIES ]; do
+        response=$( $CURL_CMD )
+        local status_code=
+        status_code=$( echo "${response}" | tail -n 1 )  # get the last line with status code
+        response=$( echo "${response}" | head -n -2 )  # get everything except the last line
+        if [ "x$status_code" = "x200" ]; then
+            break  # success
+        fi
+        echo "Try $cnt/$MAX_TRIES"
+        cnt=$(($cnt+1))
+        local rand=$( grep -m1 -ao '[0-9]' /dev/urandom | head -n1 ) # get 0-9
+        sleep $(( $SLEEP_TIME_BETWEEN_REQUESTS + $rand )) #add 10s jitter
+    done
+
+    if [ $(($cnt-1)) -eq $MAX_TRIES ]; then  # cnt-1 because of upper while condition: true while cnt <= MAX_TRIES
+        echo "Unable to get required values from the server"
+        return 1
+    fi
+
+    #Erase the 'key: ' part from the response
+    local masterIp=
+    masterIp=$( echo "$response" | sed "s/$MASTER_IP_FIELD: //g" )
+    sed -i "s/$PLACECEHOLDER_REPLACEMENT/$masterIp/g" $CONTEXT_FILE 2>/dev/null
+    echo
+    echo "Replaced the IP placeholder with: $masterIp"
+    echo
+}
+
+contextualization() {
+    marker_file_exists && return 0  # Contextualization has run before
+
+    if is_on_master_machine; then
+        echo "Doing nothing, this is a master machine"
+    else
+        slave_contextualization
+    fi
+    # Create a marker file so the contextualization runs only once
+    create_ci_marker_file
+}
+contextualization # call the main contextualization function

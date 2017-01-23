@@ -1,0 +1,123 @@
+#!/bin/sh
+
+CLUSTER_SERVICE_URL_DEFAULT=https://cernvm-online.cern.ch
+# This file has to be fetched by the cloudinit service
+CONTEXT_FILE=/var/lib/cloud/instance/user-data.txt
+# amiconfig context file, we extract 'cvm_cluster_pin', 'cvm_cluster_master' and 'cvm_service_url' fields from there
+AMI_CONTEXT_FILE=/mnt/.rw/context/user-data
+
+# How many times we try to send the ready status
+# A try every ~30s * 10 = ~6minutes
+MAX_TRIES=10
+# Sleep time in seconds between each try
+SLEEP_TIME_BETWEEN_REQUESTS=25
+# Name of the key submitted to the server
+READY_STATUS_KEY_FIELD="master_ready"
+READY_STATUS_KEY_VALUE="yes"
+
+# Item name in the context file (in the ucernvm section)
+CLUSTER_SERVICE_URL_FIELD="cvm_service_url"
+CLUSTER_MASTER_CONTEXT_FIELD="cvm_cluster_master"
+CLUSTER_PIN_CONTEXT_FIELD="cvm_cluster_pin"
+
+
+# Source file with the context file data
+source /mnt/.rw/context/ucontext
+
+# Return cluster_pin from the context file
+get_cluster_pin_from_context() {
+    echo "$_UCONTEXT_CVM_CLUSTER_PIN"
+}
+
+# Return cluster contextualization URL: either from the context file or the default value
+get_service_url() {
+    local SERVICE_URL=
+    SERVICE_URL=$_UCONTEXT_CVM_SERVICE_URL
+    if [ "$SERVICE_URL" ]; then
+        echo "$SERVICE_URL"
+    else
+        echo "$CLUSTER_SERVICE_URL_DEFAULT" # empty field, using default
+    fi
+}
+
+# Create a marker file indicating that master_ready status has been sent
+create_ci_marker_file() {
+    touch /etc/cernvm/cloudinit-master-ready-sent
+}
+
+# Check if marker file exists and context file exists
+marker_file_exists() {
+    if [ -f /etc/cernvm/cloudinit-master-ready-sent -o ! -f "$CONTEXT_FILE" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if 'cvm_cluster_master' was set in the ucernvm section
+is_on_master_machine() {
+    local master_field=$_UCONTEXT_CVM_CLUSTER_MASTER
+    if [ "x$master_field" = "xtrue" -o "x$master_field" = "xTrue" -o "x$master_field" = "x1" -o "x$master_field" = "xyes" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+send_ready_status() {
+    local CLUSTER_PIN=
+    CLUSTER_PIN=$( get_cluster_pin_from_context )
+    if [ "x$CLUSTER_PIN" = "x" ]; then
+        echo "Context file does not have a cluster pin\n"
+        return 1
+    fi
+
+    local SERVICE_URL=
+    SERVICE_URL=$( get_service_url )
+
+    #Data to be send: {"key": "master_ready", "value": "yes"}
+    local DATA=
+    DATA="{ \"key\": \"$READY_STATUS_KEY_FIELD\", \"value\": \"$READY_STATUS_KEY_VALUE\" }" 
+
+    local CURL_HEADERS="-H Content-Type:application/json"
+
+    #@- == take data from stdin, ignore output and print only the response status code
+    local CURL_CMD="curl -s -o /dev/null -w %{http_code} -XPOST $CURL_HEADERS -d @- $SERVICE_URL/api/v1/clusters/$CLUSTER_PIN/keys"
+
+    local cnt=1
+    local status_code=
+    while [ $cnt -le $MAX_TRIES ]; do
+        status_code=$( echo "$DATA" | $CURL_CMD )
+        if [ "x$status_code" = "x201" ]; then
+            break  # success
+        fi
+        echo "Try $cnt/$MAX_TRIES"
+        cnt=$(($cnt+1))
+        local rand=$( grep -m1 -ao '[0-9]' /dev/urandom | head -n1 ) # get 0-9
+        sleep $(( $SLEEP_TIME_BETWEEN_REQUESTS + $rand )) #add 10s jitter
+    done
+
+    if [ "x$status_code" = "x201" ]; then
+        echo "Master ready status successfully pushed to the server\n"
+        return 0
+    else
+        echo "Unable to push the master ready status to the server\n"
+        return 1
+    fi
+}
+
+# We execute this code only for master machines (i.e. cvm_cluster_master item in the context file)
+main_func() {
+    marker_file_exists && return 0  # Contextualization has run before
+
+    if is_on_master_machine; then
+        echo "Sending ready status to the contextualization service"
+        send_ready_status
+    else
+        echo "This is a worker machine, doing nothing"
+    fi
+
+    # Create a marker file so the contextualization runs only once
+    create_ci_marker_file
+}
+main_func # call the main contextualization function
