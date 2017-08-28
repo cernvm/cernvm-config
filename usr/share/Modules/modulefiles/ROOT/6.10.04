@@ -1,8 +1,8 @@
 #%Module 1.0
-##
-##  ROOT module for use with 'environment-modules' package:
-##  Sets the CernVM version of ROOT
-## 
+#
+#  ROOT module for use with 'environment-modules' package:
+#  Sets the CernVM version of ROOT
+#
 
 set rootsys   /cvmfs/sft.cern.ch/lcg/releases/ROOT/6.10.04-4c60e/x86_64-centos7-gcc7-opt
 set compiler  /cvmfs/sft.cern.ch/lcg/releases/gcc/7.1.0/x86_64-centos7
@@ -19,4 +19,3 @@ prepend-path  PYTHON_PATH      $rootsys/lib
 prepend-path  PATH             $compiler/bin
 prepend-path  PATH             $rootsys/bin
 prepend-path  MANPATH          $rootsys/man
-
