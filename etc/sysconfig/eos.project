@@ -2,4 +2,3 @@ export EOS_FUSE_MGM_ALIAS=eosuser.cern.ch
 export EOS_FUSE_MOUNTDIR=/eos/project/
 export EOS_FUSE_USER_KRB5CC=1
 export EOS_FUSE_USER_KRB5FIRST=1
-export EOS_FUSE_SHOW_SPECIAL_FILES=1
