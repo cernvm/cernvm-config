@@ -15,7 +15,7 @@
 #C<
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs cdrom runlevel localcert timezone ssh gui prelink \
+ tuned gconf context cvmfs custom_dirs runlevel localcert timezone ssh gui prelink \
  xrdp" 
 
 ########################################################################### 
@@ -119,8 +119,9 @@ cvmfs() {
   ln -sf /etc/cernvm/site.conf /etc/cvmfs/default.d/77-cvmsite.conf
 }
 
-cdrom() {
+custom_dirs() {
   mkdir -p /mnt/cdrom
+  mkdir -p /eos
 }
 
 runlevel() {
