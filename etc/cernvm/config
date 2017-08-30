@@ -1,5 +1,17 @@
 #!/bin/sh
 
+setupEosVolume() {
+  local server="$1"
+  if [ "x$server" != "xeosuser.cern.ch" ]; then
+    local name=$(echo $server | sed 's/\([^.]*\).*/\1/')
+    cat /etc/sysconfig/eos_cernvm | sed "s/@server@/$server/" | sed "s/@name@/$name/" \
+      > /etc/sysconfig/eos.$name
+    sed -i -e "s/\"^/ $name\"/" /etc/sysconfig/eos
+  fi
+  chkconfig eosd on
+  service eosd start
+}
+
 setupSwap() {
   local swap_size="$1"
   if [ ! -f /mnt/.rw/swapfile ]; then
@@ -296,9 +308,14 @@ config_dir=/etc/cernvm
 config_url=""
 CONFIG_FILES="config default tools domain site machine custom"
 
-while getopts ?rhxXypuc:d:s:t: opt 
+while getopts ?rhxXypuc:d:s:t:e: opt 
      do
           case $opt in
+          e)
+                 eos_server="$OPTARG"
+                 setupEosVolume $eos_server
+                 exit 0
+                 ;;
           c)     config_opt=1 
                  config_file="$OPTARG"
                  config_old=""
