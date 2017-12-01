@@ -22,6 +22,11 @@ if [ "x$UCONTEXT_SRC" = "xGCE" ]; then
   grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, GCE/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_gce.cfg
 fi
 
+if [ "x$UCONTEXT_SRC" = "xOpenNebula" ]; then
+  grep MAAS ${ROOT_PATH}/etc/cloud/cloud.cfg.d/50_cernvm.cfg | sed -e 's/MAAS/MAAS, OpenNebula/' > ${ROOT_PATH}/etc/cloud/cloud.cfg.d/51_enable_one.cfg
+fi
+
+
 if [ -f /glideinwms-user-data ]; then
   log_start "glideinWMS user data found, activating agent..."
   cp /glideinwms-user-data ${ROOT_PATH}/tmp/glideinwms-user-data
