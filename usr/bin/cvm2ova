@@ -20,6 +20,7 @@ create_context_image() {
       cp "$ROOT_KEY" ${TEMP_DIR}/context/root.pub
       mcopy -i ${TEMP_DIR}/context.fat "$ROOT_KEY" ::/root.pub
       echo "ROOT_PUBKEY=root.pub" >> ${TEMP_DIR}/context/context.sh
+      echo "SSH_KEY=\"$(head -n1 ${ROOT_KEY})\"" >> ${TEMP_DIR}/context/context.sh
     fi
     
     if [ "x${USER_DATA}" != "x" ]; then
