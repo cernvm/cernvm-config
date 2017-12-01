@@ -13,18 +13,20 @@ ONE_NIC=n
 
 create_context_image() {
   if [ "x${USER_DATA}${ROOT_KEY}" != "x" ]; then
-    mkdosfs -C ${TEMP_DIR}/context.fat 992
+    mkdosfs -n CONTEXT -C ${TEMP_DIR}/context.fat 992
     mkdir ${TEMP_DIR}/context
     
     if [ "x${ROOT_KEY}" != "x" ]; then
       cp "$ROOT_KEY" ${TEMP_DIR}/context/root.pub
-      mcopy -i ${TEMP_DIR}/context.fat "$ROOT_KEY"::/root.pub
+      mcopy -i ${TEMP_DIR}/context.fat "$ROOT_KEY" ::/root.pub
       echo "ROOT_PUBKEY=root.pub" >> ${TEMP_DIR}/context/context.sh
     fi
     
     if [ "x${USER_DATA}" != "x" ]; then
       user_data_base64=$(base64 --wrap=0 "${USER_DATA}")
       echo "EC2_USER_DATA=\"$user_data_base64\"" >> ${TEMP_DIR}/context/context.sh
+      echo "USER_DATA=\"$user_data_base64\"" >> ${TEMP_DIR}/context/context.sh
+      echo "USERDATA_ENCODING=base64" >> ${TEMP_DIR}/context/context.sh
     fi
     
     echo "ONE_CONTEXT_PATH=\"/var/lib/amiconfig\"" >> ${TEMP_DIR}/context/context.sh
