@@ -182,6 +182,7 @@ xfce4 () {
 
   
 custom_configs() {
+  replace_config /etc/singularity.conf /etc/singularity.conf.cernvm
   replace_config /etc/init.d/network /etc/init.d/network.ucernvm
   replace_config /etc/krb5.conf /etc/krb5.conf.cernvm
   replace_config /etc/lxdm/lxdm.conf /etc/lxdm/lxdm.conf.cernvm
