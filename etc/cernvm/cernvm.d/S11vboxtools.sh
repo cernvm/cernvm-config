@@ -4,6 +4,7 @@
 
 VBOX_SERVICE=vboxadd
 VBOX_CTRL=VBoxControl
+VBOX_XORG=1
 if modinfo -F version vboxguest 2>/dev/null | grep -q '^5\.2'; then
   # The following three lines are for a reboot after the kernel update
   chkconfig --del $VBOX_SERVICE
@@ -11,6 +12,7 @@ if modinfo -F version vboxguest 2>/dev/null | grep -q '^5\.2'; then
   chkconfig --del $VBOX_SERVICE-x11
   VBOX_SERVICE=vboxadd52
   VBOX_CTRL=/usr/share/vboxguest52/usr/bin/VBoxControl
+  VBOX_XORG=0
 fi
 
 
@@ -51,11 +53,11 @@ cernvm_start () {
                     if [ -x /usr/X11R6/bin/X -o -x /usr/bin/X ]; then
                       rm -f /etc/X11/xorg.conf
                       if [ ! -f /etc/X11/xorg.conf ]; then
-                          if [ -f /etc/X11/xorg.conf.vbox.cernvm ]; then
+                          if [ $VBOX_XORG -eq 1 ]; then
                             cp -f /etc/X11/xorg.conf.vbox.cernvm /etc/X11/xorg.conf
-	 		    /etc/cernvm/config -x
-                          fi;
-                      fi;
+                          fi
+                          /etc/cernvm/config -x
+                      fi
                       /sbin/service $VBOX_SERVICE-x11 setup
                     fi;
                 ;;
