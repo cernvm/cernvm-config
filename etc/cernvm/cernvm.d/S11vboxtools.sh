@@ -2,6 +2,18 @@
 # vboxtools.sh: Install VirtualBox Guest Additions
 ###########################################################################
 
+VBOX_SERVICE=vboxadd
+VBOX_CTRL=VBoxControl
+if modinfo -F version vboxguest 2>/dev/null | grep -q '^5\.2'; then
+  # The following three lines are for a reboot after the kernel update
+  chkconfig --del $VBOX_SERVICE
+  chkconfig --del $VBOX_SERVICE-service
+  chkconfig --del $VBOX_SERVICE-x11
+  VBOX_SERVICE=vboxadd52
+  VBOX_CTRL=/usr/share/vboxguest52/usr/bin/VBoxControl
+fi
+
+
 cernvm_start () { 
   ( 
     local adapter
@@ -26,12 +38,12 @@ cernvm_start () {
                       chown vboxadd /dev/vboxuser
                       chmod 0666 /dev/vboxuser
                     fi
-                    /sbin/chkconfig --add vboxadd
-                    /sbin/chkconfig --add vboxadd-x11
-                    /sbin/chkconfig --add vboxadd-service
-                    /sbin/service vboxadd start
-                    /sbin/service vboxadd-service start
-                    VBoxControl guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
+                    /sbin/chkconfig --add $VBOX_SERVICE
+                    /sbin/chkconfig --add $VBOX_SERVICE-x11
+                    /sbin/chkconfig --add $VBOX_SERVICE-service
+                    /sbin/service $VBOX_SERVICE start
+                    /sbin/service $VBOX_SERVICE-service start
+                    $VBOX_CTRL guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
                     if [ $? -eq 0 ]; then
                         echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf;
                         echo "CERNVM_HYPERVISOR=virtualbox" >> /etc/cernvm/tools.conf;
@@ -44,7 +56,7 @@ cernvm_start () {
 	 		    /etc/cernvm/config -x
                           fi;
                       fi;
-                      /sbin/service vboxadd-x11 setup
+                      /sbin/service $VBOX_SERVICE-x11 setup
                     fi;
                 ;;
                 *)
@@ -52,7 +64,7 @@ cernvm_start () {
          esac;
      fi
      if [ "x$CERNVM_HYPERVISOR" = "xvirtualbox" ]; then
-       VBoxControl guestproperty set "/VirtualBox/GuestAdd/CheckHostVersion" 0 >/dev/null 2>&1
+       VBOX_CTRL guestproperty set "/VirtualBox/GuestAdd/CheckHostVersion" 0 >/dev/null 2>&1
      fi
      if [ -f /etc/cernvm/site.conf ] 
      then
@@ -62,7 +74,7 @@ cernvm_start () {
            modprobe vboxsf
            uid=`id -u $CERNVM_USER`
            gid=`id -g $CERNVM_USER`
-           sflist=$(VBoxControl sharedfolder list | grep '^[0-9][0-9]* - ' | awk '{print $3}' | tr '\n' ' ')
+           sflist=$($VBOX_CTRL sharedfolder list | grep '^[0-9][0-9]* - ' | awk '{print $3}' | tr '\n' ' ')
            for folder in $sflist; do
              cat /proc/mounts | awk '{print $2}' | grep -q "^/mnt/shared/${folder}$" && continue
              mkdir -p /mnt/shared/${folder}
