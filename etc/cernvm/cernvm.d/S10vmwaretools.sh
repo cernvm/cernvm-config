@@ -21,39 +21,27 @@ cernvm_start () {
                                 /etc/cernvm/config -x
                             fi;
                             cp /etc/cernvm/vmtools.desktop /etc/xdg/autostart/
-                            echo "modprobe vmhgfs" >>/etc/rc.modules;
-                            chmod +x /etc/rc.modules;
-                            /sbin/modprobe vmblock >/dev/null 2>&1;
-                            /sbin/modprobe vmhgfs >/dev/null 2>&1;
                             /sbin/chkconfig --add vmware-guestd
                             /sbin/service vmware-guestd start
                             echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >>/etc/cernvm/tools.conf;
                         fi;
-                    if [ ! -f /sbin/mount.vmhgfs ]; then
-                        if [ -f /usr/sbin/mount.vmhgfs ]; then
-                            ln -s /usr/sbin/mount.vmhgfs /sbin/mount.vmhgfs;
-                        fi;
-                    fi
                 ;;
                 *)
                 ;;
             esac;
         fi;
     fi
-    if [ `/sbin/lsmod | grep -c vmhgfs` -gt 0 ]
+    if [ -f /etc/cernvm/site.conf ]
     then
-        if [ -f /etc/cernvm/site.conf ]
-        then
-           . /etc/cernvm/site.conf
-           if [ "x$CERNVM_USER" != "x" ]
-           then
-             uid=`id -u $CERNVM_USER`
-             gid=`id -g $CERNVM_USER`
-             mkdir -p /mnt/shared/$CERNVM_USER
-             chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 
-             mount -t vmhgfs  -o rw,ttl=1,uid=$uid,gid=$gid .host:/ /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 || true
-           fi
-        fi
+       . /etc/cernvm/site.conf
+       if [ "x$CERNVM_USER" != "x" ]
+       then
+         uid=`id -u $CERNVM_USER`
+         gid=`id -g $CERNVM_USER`
+         mkdir -p /mnt/shared/$CERNVM_USER
+         chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 
+         vmhgfs-fuse -o allow_other,uid=$uid,gid=$gid .host:/ /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 || true
+       fi
     fi
   )
 }
