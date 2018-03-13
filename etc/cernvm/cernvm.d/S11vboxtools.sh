@@ -45,7 +45,7 @@ cernvm_start () {
                     /sbin/chkconfig --add $VBOX_SERVICE-service
                     /sbin/service $VBOX_SERVICE start
                     /sbin/service $VBOX_SERVICE-service start
-                    $VBOX_CTRL guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000
+                    $VBOX_CTRL guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000 2>/dev/null 1>&2
                     if [ $? -eq 0 ]; then
                         echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf;
                         echo "CERNVM_HYPERVISOR=virtualbox" >> /etc/cernvm/tools.conf;
