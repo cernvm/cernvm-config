@@ -634,6 +634,8 @@ precron() {
   /etc/cron.daily/readahead.cron
   echo "  --> disable logwatch"
   chmod -x /etc/cron.daily/0logwatch
+  echo "  --> disable puppet"
+  chmod -x /etc/cron.daily/puppet3topuppet4-cache.sh
 }
 
 
