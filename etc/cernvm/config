@@ -143,10 +143,6 @@ customize_desktop() {
 
     if [ x$CERNVM_EDITION == "xDesktop" ]
 	then
-	if [ x$CERNVM_SCREEN_RES != "x" ]
-	    then
-	    /usr/bin/env python /etc/cernvm/setres.py $CERNVM_SCREEN_RES
-	fi
 	if [ x$CERNVM_START_XDM == "xon" ]
 	then
 	    [ -x /etc/init.d/xdm ]  && /sbin/chkconfig --level 35 xdm on

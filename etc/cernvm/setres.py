@@ -8,6 +8,8 @@
 import sys
 import xf86config
 
+print "The setres.py utility is deprecated, quitting"
+sys.exit()
 
 if len(sys.argv) <= 1:
     print "Usage: setres.py 1024x768"
