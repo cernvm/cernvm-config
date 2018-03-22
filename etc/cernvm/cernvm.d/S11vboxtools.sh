@@ -48,6 +48,7 @@ cernvm_start () {
                     $VBOX_CTRL guestproperty set "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold" 60000 2>/dev/null 1>&2
                     echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf;
                     echo "CERNVM_HYPERVISOR=virtualbox" >> /etc/cernvm/tools.conf;
+                    . /etc/cernvm/tools.conf
                     if [ -x /usr/X11R6/bin/X -o -x /usr/bin/X ]; then
                       rm -f /etc/X11/xorg.conf
                       if [ ! -f /etc/X11/xorg.conf ]; then

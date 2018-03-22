@@ -23,7 +23,9 @@ cernvm_start () {
                             cp /etc/cernvm/vmtools.desktop /etc/xdg/autostart/
                             /sbin/chkconfig --add vmware-guestd
                             /sbin/service vmware-guestd start
-                            echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >>/etc/cernvm/tools.conf;
+                            echo "CERNVM_TOOLS_CONFIGURED=`uname -r`" >/etc/cernvm/tools.conf
+                            echo "CERNVM_HYPERVISOR=vmware" >>/etc/cernvm/tools.conf
+                            . /etc/cernvm/tools.conf 
                         fi;
                 ;;
                 *)
@@ -31,16 +33,18 @@ cernvm_start () {
             esac;
         fi;
     fi
-    if [ -f /etc/cernvm/site.conf ]
-    then
-       . /etc/cernvm/site.conf
-       if [ "x$CERNVM_USER" != "x" ]
+    if [ "x$CERNVM_HYPERVISOR" = "xvmware" ]; then
+       if [ -f /etc/cernvm/site.conf ]
        then
-         uid=`id -u $CERNVM_USER`
-         gid=`id -g $CERNVM_USER`
-         mkdir -p /mnt/shared/$CERNVM_USER
-         chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 
-         vmhgfs-fuse -o allow_other,uid=$uid,gid=$gid .host:/ /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 || true
+          . /etc/cernvm/site.conf
+          if [ "x$CERNVM_USER" != "x" ]
+          then
+             uid=`id -u $CERNVM_USER`
+             gid=`id -g $CERNVM_USER`
+             mkdir -p /mnt/shared/$CERNVM_USER
+             chown ${CERNVM_USER}:${CERNVM_USER} /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 
+             vmhgfs-fuse -o allow_other,uid=$uid,gid=$gid .host:/ /mnt/shared/${CERNVM_USER} > /dev/null 2>&1 || true
+          fi
        fi
     fi
   )
