@@ -16,7 +16,7 @@
 ###########################################################################
 DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
  tuned gconf context cvmfs custom_dirs runlevel localcert timezone ssh gui prelink \
- xrdp" 
+ xrdp polkit_fix" 
 
 ########################################################################### 
 # Helper
@@ -36,6 +36,10 @@ replace_config() {
 ###########################################################################
 # tasks
 ###########################################################################
+
+polkit_fix() {
+  ln -fs /run/dbus /var/run/dbus
+}
 
 
 gui() {
