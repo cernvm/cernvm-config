@@ -38,6 +38,7 @@ replace_config() {
 ###########################################################################
 
 polkit_fix() {
+  rm -rf /var/run/dbus
   ln -fs /run/dbus /var/run/dbus
 }
 
