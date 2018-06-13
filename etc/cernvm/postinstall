@@ -107,11 +107,11 @@ gconf() {
 
 # Add cernvm online context option to login
 context() {
-  if [ -f /usr/sbin/cernvm-online-login.sh -a -f /lib64/security/pam_cernvm.so ]
+  if [ -f /usr/sbin/cernvm-online.sh -a -f /lib64/security/pam_cernvm.so ]
   then
     sed -i -e '/pam_cernvm.so/d' /etc/pam.d/login
     sed -i -e '/auth\s*substack\s*system-auth/i auth [success=done auth_err=die ignore=ignore] pam_cernvm.so' /etc/pam.d/login
-    sed -i -e '/account\s*substack\s*system-auth/i account requisite pam_cernvm.so' /etc/pam.d/login
+    sed -i -e '/account\s*include\s*system-auth/i account requisite pam_cernvm.so' /etc/pam.d/login
   fi
   [ ! -f /bin/sh.after ] && ln -s sh /bin/sh.after || true
   [ ! -f /bin/sh.before ] && ln -s sh /bin/sh.before || true
