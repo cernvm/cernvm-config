@@ -352,6 +352,7 @@ xrootd () {
   /sbin/chkconfig frm_purged off
   /sbin/chkconfig cmsd off
   /sbin/chkconfig eosd off
+  mkdir -p /eos
 }
 
 
