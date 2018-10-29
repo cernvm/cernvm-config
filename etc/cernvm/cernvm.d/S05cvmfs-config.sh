@@ -22,7 +22,7 @@ cernvm_start () {
   if [ $custom_pac_urls -eq 0 ]; then
     echo "CVMFS_PAC_URLS=\"http://grid-wpad/wpad.dat;http://wpad/wpad.dat;${wpad_servers}\"" >> /etc/cvmfs/site.conf
   fi
-  if [ $custom_http_proxy -eq 0 ]; then
+  if [ $custom_http_proxies -eq 0 ]; then
     echo "CVMFS_HTTP_PROXY=\"auto;DIRECT\"" >> /etc/cvmfs/site.conf
   fi 
  
