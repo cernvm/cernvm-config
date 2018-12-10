@@ -19,7 +19,7 @@ DEFAULT_ACTIONS="cloud_init cvmfs cernvm krb dns timezone ntp nfs ssh autofs \
                  condor ganglia xrootd openldap precron updatedb screen sssd \
                  cernvm_appliance_agent localcert gconf ttyinit selinux afs xrdp \
                  shoal rabbitmq tuned sysstat tex glideinwms waagent default_java \
-                 sudo" 
+                 sudo mtab" 
 
 ########################################################################### 
 # Helper
@@ -48,6 +48,11 @@ sudo() {
   then 
     echo 'Defaults:root !requiretty' >> /etc/sudoers
   fi
+}
+
+mtab() {
+  # Create empty /etc/mtab as bind mount target
+  touch /etc/mtab
 }
 
 
