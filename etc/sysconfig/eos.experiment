@@ -1,0 +1,3 @@
+export EOS_FUSE_MGM_ALIAS=eospublic.cern.ch
+export EOS_FUSE_MOUNTDIR=/eos/experiment
+export EOS_FUSE_USER_KRB5FIRST=1
