@@ -1,1 +1,1 @@
-EOS_FUSE_MOUNTS="project user public"
+EOS_FUSE_MOUNTS="project user public experiment"
