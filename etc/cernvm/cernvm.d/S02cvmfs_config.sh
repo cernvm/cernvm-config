@@ -21,7 +21,7 @@ cernvm_start () {
       custom_pac_urls=1
     fi
   fi
-  local wpad_server_list="http://wlcg-wpad.cern.ch/wpad.dat http://wlcg-wpad.fnal.gov/wpad.dat"
+  local wpad_server_list="http://cernvm-wpad.cern.ch/wpad.dat http://cernvm-wpad.fnal.gov/wpad.dat"
   local wpad_servers=$(echo $wpad_server_list | tr ' ' '\n' | shuf | tr '\n' ';' | sed 's/;$//')
   if [ $custom_pac_urls -eq 0 ]; then
     echo "CVMFS_PAC_URLS=\"http://grid-wpad/wpad.dat;http://wpad/wpad.dat;${wpad_servers}\"" >> /etc/cvmfs/site.conf
