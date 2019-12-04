@@ -198,6 +198,7 @@ custom_configs() {
   replace_config /etc/sysconfig/man-db /etc/sysconfig/man-db.cernvm
   replace_config /etc/updatedb.conf /etc/updatedb.conf.cernvm
   replace_config /etc/sudoers /etc/sudoers.cernvm
+  replace_config /etc/containerd/config.toml /etc/containerd/config.toml.cernvm
   chmod 0440 /etc/sudoers
 }
 
