@@ -50,7 +50,6 @@ gui() {
 
 disable_services() {
   systemctl disable avahi-daemon
-  systemctl disable eosd
   systemctl disable ganglia-gmond
   systemctl disable glusterd
   systemctl disable libvirtd
