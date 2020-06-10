@@ -14,9 +14,10 @@
 # 11-Oct-2015
 #C<
 ###########################################################################
-DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
- tuned gconf context cvmfs custom_dirs runlevel localcert timezone ssh gui prelink \
- xrdp polkit_fix" 
+DEFAULT_ACTIONS="disable_services enable_services"
+#DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
+# tuned gconf context cvmfs custom_dirs runlevel localcert timezone ssh gui prelink \
+# xrdp polkit_fix" 
 
 ########################################################################### 
 # Helper
@@ -49,50 +50,42 @@ gui() {
 
 
 disable_services() {
-  systemctl disable avahi-daemon
-  systemctl disable ganglia-gmond
-  systemctl disable glusterd
-  systemctl disable libvirtd
-  systemctl disable ksm
-  systemctl disable ksmtuned
-  systemctl disable rabbitmq_server
-  systemctl disable squid
-  systemctl disable sssd
-  systemctl disable sysstat
-  systemctl disable walinuxagent
-  systemctl disable xrdp
+  :
+  #systemctl disable avahi-daemon
+  #systemctl disable ganglia-gmond
+  #systemctl disable glusterd
+  #systemctl disable libvirtd
+  #systemctl disable ksm
+  #systemctl disable ksmtuned
+  #systemctl disable rabbitmq_server
+  #systemctl disable squid
+  #systemctl disable sssd
+  #systemctl disable sysstat
+  #systemctl disable walinuxagent
+  #systemctl disable xrdp
 }
 
 enable_services() {
-  systemctl enable amiconfig
-  systemctl enable cernvm
-  systemctl enable cernvm-context-postscripts
-  systemctl enable cernvm-online
-  systemctl enable cernvm-cluster-contextualization
-  systemctl enable cernvm-cluster-master-ready
-  systemctl enable cernvm-release
+  systemctl enable acipd
+  #systemctl enable amiconfig
+  #systemctl enable cernvm
+  #systemctl enable cernvm-context-postscripts
+  #systemctl enable cernvm-online
+  #systemctl enable cernvm-cluster-contextualization
+  #systemctl enable cernvm-cluster-master-ready
+  #systemctl enable cernvm-release
   systemctl reenable cloud-final.service
-  systemctl enable mnt-.rw-swapfile.swap
-  systemctl enable ntpd
-  systemctl enable ucernvm-pinfiles
-  systemctl enable vboxguest
-  systemctl enable vboxguest-daemon
-  systemctl enable vboxguest-sf
-  systemctl enable vmware-guestd
+  #systemctl enable mnt-.rw-swapfile.swap
+  #systemctl enable ntpd
+  #systemctl enable ucernvm-pinfiles
+  #systemctl enable vboxguest
+  #systemctl enable vboxguest-daemon
+  #systemctl enable vboxguest-sf
+  #systemctl enable vmware-guestd
 }
 
 tuned() {
   /usr/sbin/tuned-adm profile cernvm
-}
-
-afs() {
-  echo "cern.ch" > /usr/vice/etc/ThisCell
-  chkconfig openafs-client off
-  chkconfig afs off
-  if [ -f /etc/init.d/openafs-client -a ! -f /etc/init.d/afs ]; then
-    ln -s /etc/init.d/openafs-client /etc/init.d/afs
-  fi
-  rmdir /afs
 }
 
 xrdp() {
