@@ -1,0 +1,33 @@
+################
+# CernVM Cluster
+################
+SEC_DAEMON_AUTHENTICATION = required
+SEC_DAEMON_INTEGRITY = required
+SEC_DAEMON_AUTHENTICATION_METHODS = password
+SEC_CLIENT_AUTHENTICATION_METHODS = password,fs,gsi,kerberos
+SEC_PASSWORD_FILE = /etc/condor/condor_credential
+SEC_ENABLE_MATCH_PASSWORD_AUTHENTICATION = True
+
+ALLOW_DAEMON = condor_pool@*, submit-side@matchsession
+## Short description: Change this to an appropriate name (30 chr. limit)
+COLLECTOR_NAME = CernVM cluster at \$(CONDOR_HOST)
+##  Sets how often the condor_negotiator starts a negotiation cycle.
+##  It is defined in seconds and defaults to 60 (1 minute).
+NEGOTIATOR_INTERVAL = 20
+##  When is this machine willing to start a job?
+START = TRUE
+##  When to suspend a job?
+SUSPEND = FALSE
+##  When to nicely stop a job?
+##  (as opposed to killing it instantaneously)
+PREEMPT = FALSE
+##  When to instantaneously kill a preempting job
+##  (e.g. if a job is in the pre-empting stage for too long)
+KILL = FALSE
+##  Disable UID_DOMAIN check when submit a job
+TRUST_UID_DOMAIN = TRUE
+
+##  Use TCP instead of UDP, and cache TCP sockets
+##  (more reliable on some cloud networks)
+UPDATE_COLLECTOR_WITH_TCP = True
+COLLECTOR_SOCKET_CACHE_SIZE = 1000
