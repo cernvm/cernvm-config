@@ -14,7 +14,7 @@
 # 11-Oct-2015
 #C<
 ###########################################################################
-DEFAULT_ACTIONS="disable_services enable_services"
+DEFAULT_ACTIONS="disable_services enable_services prelink"
 #DEFAULT_ACTIONS="custom_configs disable_services enable_services precron \
 # tuned gconf context cvmfs custom_dirs runlevel localcert timezone ssh gui prelink \
 # xrdp polkit_fix" 
@@ -216,7 +216,7 @@ precron() {
 
 # Update static linker cache
 prelink() {
-  /sbin/ldconfig
+  /sbin/ldconfig -X
 }
 
 
