@@ -38,11 +38,6 @@ replace_config() {
 # tasks
 ###########################################################################
 
-polkit_fix() {
-  rm -rf /var/run/dbus
-  ln -fs /run/dbus /var/run/dbus
-}
-
 
 gui() {
   replace_config /etc/xdg/xfce4/helpers.rc /etc/xdg/xfce4/helpers.rc.cernvm
@@ -66,14 +61,14 @@ disable_services() {
 }
 
 enable_services() {
-  systemctl enable acipd
+  systemctl enable acpid
   #systemctl enable amiconfig
   #systemctl enable cernvm
   #systemctl enable cernvm-context-postscripts
   #systemctl enable cernvm-online
   #systemctl enable cernvm-cluster-contextualization
   #systemctl enable cernvm-cluster-master-ready
-  #systemctl enable cernvm-release
+  systemctl enable cernvm-release
   systemctl reenable cloud-final.service
   #systemctl enable mnt-.rw-swapfile.swap
   #systemctl enable ntpd
